@@ -1,0 +1,303 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'album_import.config.title'|trans }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home')},
+    {'text': 'album_import.config.title'|trans, 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="container-fluid" data-controller="album-import-config">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-music text-primary"></i> {{ 'album_import.config.title'|trans }}</h1>
+                <div>
+                    <button id="resetBtn" class="btn btn-outline-warning me-2" data-action="click->album-import-config#resetConfig">
+                        <i class="fas fa-undo"></i> {{ 'config.reset'|trans }}
+                    </button>
+                    <button id="saveBtn" class="btn btn-success" data-action="click->album-import-config#saveConfig">
+                        <i class="fas fa-save"></i> {{ 'config.save'|trans }}
+                    </button>
+                </div>
+                
+                <!-- Hidden translation elements for JavaScript -->
+                <div style="display: none;">
+                    <span data-translation="config.saved_successfully">{{ 'config.saved_successfully'|trans }}</span>
+                    <span data-translation="app.error">{{ 'app.error'|trans }}</span>
+                    <span data-translation="config.save_error">{{ 'config.save_error'|trans }}</span>
+                    <span data-translation="config.reset_confirm">{{ 'config.reset_confirm'|trans }}</span>
+                </div>
+            </div>
+
+            <!-- Primary Types -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'album_import.config.primary_types'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input primary-type-checkbox" type="checkbox" id="primaryAlbum" value="Album"
+                                       {{ 'Album' in (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="primaryTypeCheckbox">
+                                <label class="form-check-label" for="primaryAlbum">
+                                    <strong>Album</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input primary-type-checkbox" type="checkbox" id="primaryBroadcast" value="Broadcast"
+                                       {{ 'Broadcast' in (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="primaryTypeCheckbox">
+                                <label class="form-check-label" for="primaryBroadcast">
+                                    <strong>Broadcast</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input primary-type-checkbox" type="checkbox" id="primaryEP" value="EP"
+                                       {{ 'EP' in (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="primaryTypeCheckbox">
+                                <label class="form-check-label" for="primaryEP">
+                                    <strong>EP</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input primary-type-checkbox" type="checkbox" id="primaryOther" value="Other"
+                                       {{ 'Other' in (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="primaryTypeCheckbox">
+                                <label class="form-check-label" for="primaryOther">
+                                    <strong>Other</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input primary-type-checkbox" type="checkbox" id="primarySingle" value="Single"
+                                       {{ 'Single' in (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="primaryTypeCheckbox">
+                                <label class="form-check-label" for="primarySingle">
+                                    <strong>Single</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text">{{ 'album_import.config.primary_types_help'|trans }}</div>
+                </div>
+            </div>
+
+            <!-- Secondary Types -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'album_import.config.secondary_types'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryStudio" value="Studio"
+                                       {{ 'Studio' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryStudio">
+                                    <strong>Studio</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondarySpokenword" value="Spokenword"
+                                       {{ 'Spokenword' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondarySpokenword">
+                                    <strong>Spokenword</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondarySoundtrack" value="Soundtrack"
+                                       {{ 'Soundtrack' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondarySoundtrack">
+                                    <strong>Soundtrack</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryRemix" value="Remix"
+                                       {{ 'Remix' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryRemix">
+                                    <strong>Remix</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryMixtape" value="Mixtape/Street"
+                                       {{ 'Mixtape/Street' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryMixtape">
+                                    <strong>Mixtape/Street</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryLive" value="Live"
+                                       {{ 'Live' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryLive">
+                                    <strong>Live</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryInterview" value="Interview"
+                                       {{ 'Interview' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryInterview">
+                                    <strong>Interview</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryDJMix" value="DJ-mix"
+                                       {{ 'DJ-mix' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryDJMix">
+                                    <strong>DJ-mix</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryDemo" value="Demo"
+                                       {{ 'Demo' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryDemo">
+                                    <strong>Demo</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryCompilation" value="Compilation"
+                                       {{ 'Compilation' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryCompilation">
+                                    <strong>Compilation</strong>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input secondary-type-checkbox" type="checkbox" id="secondaryAudioDrama" value="Audio drama"
+                                       {{ 'Audio drama' in (config['album_import.secondary_types'] ?? ['Studio', 'Remix']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="secondaryTypeCheckbox">
+                                <label class="form-check-label" for="secondaryAudioDrama">
+                                    <strong>Audio drama</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text">{{ 'album_import.config.secondary_types_help'|trans }}</div>
+                </div>
+            </div>
+
+            <!-- Release Statuses -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'album_import.config.release_statuses'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input release-status-checkbox" type="checkbox" id="statusOfficial" value="official"
+                                       {{ 'official' in (config['album_import.release_statuses'] ?? ['official']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="releaseStatusCheckbox">
+                                <label class="form-check-label" for="statusOfficial">
+                                    <strong>Official</strong>
+                                </label>
+                                <div class="form-text">{{ 'album_import.config.status_official_help'|trans }}</div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input release-status-checkbox" type="checkbox" id="statusPromotion" value="promotion"
+                                       {{ 'promotion' in (config['album_import.release_statuses'] ?? ['official']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="releaseStatusCheckbox">
+                                <label class="form-check-label" for="statusPromotion">
+                                    <strong>Promotion</strong>
+                                </label>
+                                <div class="form-text">{{ 'album_import.config.status_promotion_help'|trans }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input release-status-checkbox" type="checkbox" id="statusBootleg" value="bootleg"
+                                       {{ 'bootleg' in (config['album_import.release_statuses'] ?? ['official']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="releaseStatusCheckbox">
+                                <label class="form-check-label" for="statusBootleg">
+                                    <strong>Bootleg</strong>
+                                </label>
+                                <div class="form-text">{{ 'album_import.config.status_bootleg_help'|trans }}</div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input release-status-checkbox" type="checkbox" id="statusPseudoRelease" value="pseudo-release"
+                                       {{ 'pseudo-release' in (config['album_import.release_statuses'] ?? ['official']) ? 'checked' : '' }}
+                                       data-action="change->album-import-config#updateSummaryCounts"
+                                       data-album-import-config-target="releaseStatusCheckbox">
+                                <label class="form-check-label" for="statusPseudoRelease">
+                                    <strong>Pseudo-release</strong>
+                                </label>
+                                <div class="form-text">{{ 'album_import.config.status_pseudo_release_help'|trans }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-text">{{ 'album_import.config.release_statuses_help'|trans }}</div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'album_import.config.summary'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 text-primary" id="primaryTypesCount" data-album-import-config-target="primaryTypesCount">{{ (config['album_import.primary_types'] ?? ['Album', 'EP', 'Single'])|length }}</div>
+                                <div class="text-muted">{{ 'album_import.config.primary_types_selected'|trans }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 text-success" id="secondaryTypesCount" data-album-import-config-target="secondaryTypesCount">{{ (config['album_import.secondary_types'] ?? ['Studio', 'Remix'])|length }}</div>
+                                <div class="text-muted">{{ 'album_import.config.secondary_types_selected'|trans }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 text-info" id="releaseStatusesCount" data-album-import-config-target="releaseStatusesCount">{{ (config['album_import.release_statuses'] ?? ['official'])|length }}</div>
+                                <div class="text-muted">{{ 'album_import.config.release_statuses_selected'|trans }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

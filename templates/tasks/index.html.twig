@@ -1,0 +1,518 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'nav.tasks'|trans }} - {{ 'app.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        .task-status-badge {
+            font-size: 0.8rem;
+        }
+        .task-stats-card {
+            transition: all 0.3s ease;
+        }
+        .task-stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .task-type-badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .progress-container {
+            height: 4px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-bar-animated {
+            height: 100%;
+            background: linear-gradient(45deg, var(--accent-color), var(--accent-secondary));
+            animation: progress-animate 1s ease-in-out infinite;
+        }
+        @keyframes progress-animate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .auto-refresh-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            padding: 8px 12px;
+            background: rgba(23, 162, 184, 0.9);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': 'nav.tasks'|trans, 'url': null, 'active': true, 'icon': 'fas fa-tasks'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container-fluid" data-controller="tasks">
+    <!-- Auto-refresh indicator -->
+    <div id="auto-refresh-indicator" class="auto-refresh-indicator" data-tasks-target="autoRefreshIndicator">
+        <i class="fas fa-sync-alt fa-spin me-1"></i>
+        Auto-refreshing...
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-tasks me-2"></i>Task Management
+            </h1>
+            <p class="text-muted mb-0">Monitor and manage background tasks</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('tasks_create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Create Task
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" id="task-statistics">
+        <div class="col-md-2">
+            <div class="card task-stats-card border-warning">
+                <div class="card-body text-center">
+                    <div class="h2 text-warning mb-1" id="stat-pending" data-tasks-target="statPending">{{ statistics.pending }}</div>
+                    <div class="text-muted small">Pending</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card task-stats-card border-info">
+                <div class="card-body text-center">
+                    <div class="h2 text-info mb-1" id="stat-running" data-tasks-target="statRunning">{{ statistics.running }}</div>
+                    <div class="text-muted small">Running</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card task-stats-card border-success">
+                <div class="card-body text-center">
+                    <div class="h2 text-success mb-1" id="stat-completed" data-tasks-target="statCompleted">{{ statistics.completed }}</div>
+                    <div class="text-muted small">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card task-stats-card border-danger">
+                <div class="card-body text-center">
+                    <div class="h2 text-danger mb-1" id="stat-failed" data-tasks-target="statFailed">{{ statistics.failed }}</div>
+                    <div class="text-muted small">Failed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card task-stats-card border-secondary">
+                <div class="card-body text-center">
+                    <div class="h2 text-secondary mb-1" id="stat-cancelled" data-tasks-target="statCancelled">{{ statistics.cancelled }}</div>
+                    <div class="text-muted small">Cancelled</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card task-stats-card border-primary">
+                <div class="card-body text-center">
+                    <button class="btn btn-sm btn-outline-primary" data-action="click->tasks#refreshStatistics">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <div class="text-muted small mt-1">Refresh</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>Task Filters
+                {% if activeFilters|length > 0 %}
+                    <span class="badge bg-primary ms-2">{{ activeFilters|length }} active</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <!-- Row 1: Status, Type, Priority -->
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for status in taskStatuses %}
+                            <option value="{{ status }}" {{ filters.status == status ? 'selected' : '' }}>
+                                {{ status|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for type in taskTypes %}
+                            <option value="{{ type }}" {{ filters.type == type ? 'selected' : '' }}>
+                                {{ type|replace({'_': ' '})|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select name="priority" id="priority" class="form-select">
+                        <option value="">All Priorities</option>
+                        {% for value, label in priorityOptions %}
+                            <option value="{{ value }}" {{ filters.priority == value ? 'selected' : '' }}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="entity_name" class="form-label">Entity Name</label>
+                    <input type="text" name="entity_name" id="entity_name" class="form-control" 
+                           value="{{ filters.entity_name }}" placeholder="Search entity name...">
+                </div>
+
+                <!-- Row 2: Date Range, Sorting -->
+                <div class="col-md-3">
+                    <label for="created_after" class="form-label">Created After</label>
+                    <input type="date" name="created_after" id="created_after" class="form-control" 
+                           value="{{ filters.created_after }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="created_before" class="form-label">Created Before</label>
+                    <input type="date" name="created_before" id="created_before" class="form-control" 
+                           value="{{ filters.created_before }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="sort" class="form-label">Sort By</label>
+                    <select name="sort" id="sort" class="form-select">
+                        <option value="created_at" {{ filters.sort == 'created_at' ? 'selected' : '' }}>Created Date</option>
+                        <option value="started_at" {{ filters.sort == 'started_at' ? 'selected' : '' }}>Started Date</option>
+                        <option value="completed_at" {{ filters.sort == 'completed_at' ? 'selected' : '' }}>Completed Date</option>
+                        <option value="priority" {{ filters.sort == 'priority' ? 'selected' : '' }}>Priority</option>
+                        <option value="status" {{ filters.sort == 'status' ? 'selected' : '' }}>Status</option>
+                        <option value="type" {{ filters.sort == 'type' ? 'selected' : '' }}>Type</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="order" class="form-label">Order</label>
+                    <select name="order" id="order" class="form-select">
+                        <option value="desc" {{ filters.order == 'desc' ? 'selected' : '' }}>Descending</option>
+                        <option value="asc" {{ filters.order == 'asc' ? 'selected' : '' }}>Ascending</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Apply
+                        </button>
+                        <a href="{{ path('tasks_index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Filter Buttons -->
+                <div class="col-12">
+                    <label class="form-label">Quick Filters:</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ quickFilterUrls.pending }}" class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-clock me-1"></i>Pending Tasks
+                        </a>
+                        <a href="{{ quickFilterUrls.running }}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-spinner me-1"></i>Running Tasks
+                        </a>
+                        <a href="{{ quickFilterUrls.failed }}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Failed Tasks
+                        </a>
+                        <a href="{{ quickFilterUrls.highPriority }}" class="btn btn-sm btn-outline-dark">
+                            <i class="fas fa-exclamation me-1"></i>High Priority
+                        </a>
+                        <a href="{{ quickFilterUrls.today }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-calendar-day me-1"></i>Today
+                        </a>
+                        <a href="{{ quickFilterUrls.byPriority }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-sort-amount-down me-1"></i>By Priority
+                        </a>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Active Filters Display -->
+            {% if activeFilters|length > 0 %}
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <strong class="text-muted">Active Filters:</strong>
+                        {% for key, value in activeFilters %}
+                            {% if key not in ['sort', 'order'] %}
+                                <span class="badge bg-light text-dark border">
+                                    {{ key|replace({'_': ' '})|title }}: {{ value }}
+                                    <a href="{{ filterRemovalUrls[key] }}" class="text-decoration-none ms-1">&times;</a>
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Auto-refresh Controls -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Tasks are automatically refreshed every 5 seconds when auto-refresh is enabled. Settings are saved automatically.
+                    </small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <label class="form-label mb-0 me-2">Auto-refresh:</label>
+                    <div class="d-inline-flex gap-2">
+                        <button type="button" id="toggle-auto-refresh" class="btn btn-outline-success" data-action="click->tasks#toggleAutoRefresh" data-tasks-target="toggleAutoRefreshBtn">
+                            <i class="fas fa-play me-1"></i>Start
+                        </button>
+                        <span class="badge bg-secondary align-self-center" id="refresh-countdown" data-tasks-target="refreshCountdown"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if tasks %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST" action="{{ path('tasks_bulk_action') }}" id="bulk-action-form">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Bulk Actions</label>
+                        <select name="action" class="form-select" required>
+                            <option value="">Select Action</option>
+                            <option value="cancel">Cancel Selected</option>
+                            <option value="retry">Retry Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-warning" data-action="submit->tasks#confirmBulkAction">
+                            <i class="fas fa-bolt me-1"></i>Execute
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-action="click->tasks#selectAll">
+                            Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="click->tasks#selectNone">
+                            Select None
+                        </button>
+                    </div>
+                </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tasks Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Tasks</h5>
+            {% if tasks %}
+                <div class="text-muted small">
+                    Showing {{ tasks|length }} tasks
+                </div>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40">
+                                    <input type="checkbox" id="select-all-checkbox" data-action="change->tasks#toggleAllTasks" data-tasks-target="selectAllCheckbox">
+                                </th>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Entity</th>
+                                <th>Created</th>
+                                <th>Duration</th>
+                                <th>Priority</th>
+                                <th width="120">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasks-table-body">
+                            {% for task in tasks %}
+                                <tr id="task-row-{{ task.id }}">
+                                    <td>
+                                        <input type="checkbox" name="task_ids[]" value="{{ task.id }}" class="task-checkbox" data-tasks-target="taskCheckbox">
+                                    </td>
+                                    <td>
+                                        <a href="{{ path('tasks_show', {id: task.id}) }}" class="text-decoration-none">
+                                            #{{ task.id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge task-type-badge bg-secondary">
+                                            {{ task.type|replace({'_': ' '})|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set statusClass = task.status == 'completed' ? 'success' :
+                                                          (task.status == 'failed' ? 'danger' :
+                                                          (task.status == 'running' ? 'info' :
+                                                          (task.status == 'cancelled' ? 'secondary' : 'warning'))) %}
+                                        <span class="badge bg-{{ statusClass }} task-status-badge">
+                                            {% if task.status == 'running' %}
+                                                <i class="fas fa-spinner fa-spin me-1"></i>
+                                            {% endif %}
+                                            {{ task.status|title }}
+                                        </span>
+                                        {% if task.status == 'running' %}
+                                            <div class="progress-container mt-1">
+                                                <div class="progress-bar-animated"></div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if task.entityName %}
+                                            <div class="fw-bold">{{ task.entityName }}</div>
+                                        {% endif %}
+                                        {% if task.entityMbid %}
+                                            <small class="text-muted">MBID: {{ task.entityMbid[:8] }}...</small>
+                                        {% elseif task.entityId %}
+                                            <small class="text-muted">ID: {{ task.entityId }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ task.createdAt|date('Y-m-d H:i') }}</div>
+                                        <small class="text-muted">{{ task.createdAt|date('s') }}s ago</small>
+                                    </td>
+                                    <td>
+                                        {% if task.duration %}
+                                            <span class="badge bg-light text-dark">{{ task.duration }}s</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if task.priority > 0 %}
+                                            <span class="badge bg-primary">{{ task.priority }}</span>
+                                        {% else %}
+                                            <span class="text-muted">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ path('tasks_show', {id: task.id}) }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if task.isActive %}
+                                                <button class="btn btn-outline-warning btn-sm" data-action="click->tasks#cancelTask" data-task-id="{{ task.id }}">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            {% endif %}
+                                            {% if task.status == 'failed' %}
+                                                <button class="btn btn-outline-success btn-sm" data-action="click->tasks#retryTask" data-task-id="{{ task.id }}">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </form>
+
+                <!-- Pagination -->
+                {% if hasPrevPage or hasNextPage %}
+                    <div class="card-footer">
+                        <nav>
+                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                {% if hasPrevPage %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ prevPageUrl }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">{{ currentPage }}</span>
+                                </li>
+
+                                {% if hasNextPage %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ nextPageUrl }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No tasks found</h5>
+                    <p class="text-muted">
+                        {% if activeFilters|length > 0 %}
+                            No tasks match your current filters.
+                            <a href="{{ path('tasks_index') }}">Clear all filters</a>
+                        {% else %}
+                            Create your first task to get started.
+                        {% endif %}
+                    </p>
+                    <a href="{{ path('tasks_create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create Task
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cleanup Section -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-broom me-1"></i>Task Cleanup
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ path('tasks_cleanup') }}" data-action="submit->tasks#confirmCleanup">
+                        <div class="mb-3">
+                            <label for="days_old" class="form-label">Delete tasks older than (days):</label>
+                            <input type="number" name="days_old" id="days_old" value="30" min="0" max="365" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-trash me-1"></i>Cleanup Old Tasks
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

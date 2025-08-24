@@ -1,0 +1,139 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'artist.index.title'|trans }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid" data-controller="artist-index-modern">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ 'artist.index.title'|trans }}</h1>
+        {% if enabledLibrariesCount > 0 %}
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addArtistModal">
+            <i class="fas fa-plus me-2"></i>{{ 'artist.add_new'|trans }}
+        </button>
+        {% endif %}
+    </div>
+
+<!-- Filtres -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" id="searchInput" placeholder="{{ 'artist.search_placeholder'|trans }} (type to search automatically)" data-artist-index-modern-target="searchInput">
+            <span class="input-group-text">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <select class="form-select" id="statusFilter" data-artist-index-modern-target="statusFilter">
+            <option value="">{{ 'artist.all_status'|trans }}</option>
+            <option value="active">{{ 'artist.status_values.active'|trans }}</option>
+            <option value="ended">{{ 'artist.status_values.ended'|trans }}</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="albumFilter" data-artist-index-modern-target="albumFilter">
+            <option value="">{{ 'artist.all_artists'|trans|default('All artists') }}</option>
+            <option value="with_albums">{{ 'artist.with_albums'|trans|default('With albums') }}</option>
+            <option value="without_albums">{{ 'artist.without_albums'|trans|default('Without albums') }}</option>
+        </select>
+    </div>
+</div>
+
+<!-- Filter status indicator -->
+<div class="row mb-2" data-artist-index-modern-target="filterStatus" style="display: none;">
+    <div class="col-12">
+        <div class="alert alert-info alert-sm py-2 mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            <small>
+                <span data-artist-index-modern-target="filterStatusText"></span>
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Search results info -->
+<div data-artist-index-modern-target="searchResultsInfo" class="mb-3 hidden">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            <span data-artist-index-modern-target="searchResultsText"></span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary"
+                data-action="click->artist-index-modern#clearAllFilters">
+            <i class="fas fa-times me-1"></i>{{ 'artist.clear_filters'|trans|default('Clear all filters') }}
+        </button>
+    </div>
+</div>
+
+<!-- Conteneur des artistes -->
+<div class="row" id="artistsContainer" data-artist-index-modern-target="artistsContainer">
+    <div class="col-12 text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">{{ 'app.loading'|trans }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Loading indicator -->
+<div data-artist-index-modern-target="loadingIndicator" class="text-center py-4 hidden">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-4 text-muted">{{ 'artist.loading_more'|trans|default('Loading more artists...') }}</p>
+</div>
+
+<!-- End of data indicator -->
+<div data-artist-index-modern-target="endOfDataIndicator" class="text-center py-4 text-muted hidden">
+    <i class="fas fa-check-circle"></i>
+    <p class="mt-2">{{ 'artist.all_loaded'|trans|default('All artists loaded') }}</p>
+</div>
+
+<!-- Infinite scroll trigger -->
+<div data-artist-index-modern-target="infiniteScrollTrigger" class="infinite-scroll-trigger"></div>
+
+<!-- Modal d'ajout d'artiste -->
+{% if enabledLibrariesCount > 0 %}
+<div class="modal fade" id="addArtistModal" tabindex="-1">
+    <div class="modal-dialog modal-full">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'artist.add_new'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addArtistForm">
+                    <div class="mb-3">
+                        <label for="artistSearch" class="form-label">{{ 'artist.search_musicbrainz'|trans }}</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="artistSearch" placeholder="{{ 'artist.search_placeholder'|trans }}">
+                            <button class="btn btn-outline-secondary" type="button" data-action="click->artist-index-modern#searchMusicBrainz">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="searchResults" class="hidden" data-artist-index-modern-target="searchResults">
+                        <h6>{{ 'artist.search_results'|trans }}</h6>
+                        <div id="artistResults" class="list-group mb-3" data-artist-index-modern-target="artistResults"></div>
+                    </div>
+                    
+                    <div id="selectedArtistInfo" class="hidden" data-artist-index-modern-target="selectedArtistInfo">
+                        <h6>{{ 'artist.selected_artist'|trans }}</h6>
+                        <div id="artistInfo" class="alert alert-info" data-artist-index-modern-target="artistInfo"></div>
+                    </div>
+                    
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'common.cancel'|trans }}</button>
+                <button type="button" class="btn btn-primary" id="saveArtistBtn" disabled>{{ 'artist.add'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+ 

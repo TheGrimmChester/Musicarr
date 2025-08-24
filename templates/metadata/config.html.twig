@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Metadata Configuration{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home')},
+    {'text': 'Metadata', 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="container-fluid" data-controller="metadata-config">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-images text-primary"></i> Metadata</h1>
+        <button id="saveBtn" class="btn btn-success" data-action="click->metadata-config#saveConfig" data-metadata-config-target="saveBtn">
+          <i class="fas fa-save"></i> {{ 'config.save'|trans|default('Save') }}
+        </button>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Storage</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="baseDir" class="form-label"><strong>Metadata base directory</strong></label>
+            <input type="text" class="form-control" id="baseDir" value="{{ config['metadata.base_dir'] ?? '/app/public/metadata' }}" data-metadata-config-target="baseDir">
+            <div class="form-text">Default: /app/public/metadata</div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="saveInLibrary" {{ (config['metadata.save_in_library'] ?? false) ? 'checked' : '' }} data-metadata-config-target="saveInLibrary">
+            <label class="form-check-label" for="saveInLibrary"><strong>Save metadata in the library folders</strong></label>
+            <div class="form-text">Artist: {{ "{{libraryRootDir}}/{{artist}}/{{mbid}}.jpg" }} — Album: {{ "{{libraryRootDir}}/{{artist}}/{{album}}{{mbid}}.jpg" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+

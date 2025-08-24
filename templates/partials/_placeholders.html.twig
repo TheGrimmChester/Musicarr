@@ -1,0 +1,51 @@
+{# Placeholders pour les images #}
+
+{# Placeholder pour artiste #}
+{% macro artist_placeholder(size = '50px') %}
+{% set size_clean = size|replace({'px': ''}) %}
+{% set size_parts = size_clean|split('x') %}
+{% if size_parts|length == 1 %}
+    {% set width = size_parts[0] %}
+    {% set height = size_parts[0] %}
+{% else %}
+    {% set width = size_parts[0] %}
+    {% set height = size_parts[1] %}
+{% endif %}
+<img src="{{ path('placeholder_artist', {size: width ~ 'x' ~ height, text: 'placeholder.artist_placeholder'|trans}) }}"
+     alt="{{ 'placeholder.artist_placeholder'|trans }} placeholder"
+     class="placeholder-image"
+     style="width: {{ size }}; height: {{ size }};">
+{% endmacro %}
+
+{# Placeholder pour album #}
+{% macro album_placeholder(size = '200x200') %}
+{% set size_parts = size|split('x') %}
+{% set width = size_parts[0] %}
+{% set height = size_parts[1] %}
+<img src="{{ path('placeholder_album', {size: width ~ 'x' ~ height, text: 'placeholder.album_placeholder'|trans}) }}"
+     alt="{{ 'placeholder.album_placeholder'|trans }} placeholder"
+     class="card-img-top placeholder-image placeholder-image--rect"
+     style="height: {{ height }}px;">
+{% endmacro %}
+
+{# Placeholder pour artiste en JavaScript #}
+{% macro artist_placeholder_js() %}
+`{{ path('placeholder_artist', {size: '50x50', text: 'placeholder.artist_placeholder'|trans}) }}`
+{% endmacro %}
+
+{# Placeholder pour album en JavaScript #}
+{% macro album_placeholder_js() %}
+`{{ path('placeholder_album', {size: '200x200', text: 'placeholder.album_placeholder'|trans}) }}`
+{% endmacro %}
+
+{# Placeholder générique #}
+{% macro generic_placeholder(size = '100x100', text = null) %}
+{% set text = text ?? 'placeholder.image_placeholder'|trans %}
+{% set size_parts = size|split('x') %}
+{% set width = size_parts[0] %}
+{% set height = size_parts[1] %}
+<img src="{{ path('placeholder_generic', {size: width ~ 'x' ~ height, text: text}) }}"
+     alt="{{ text }} placeholder"
+     class="placeholder-image placeholder-image--rect"
+     style="width: {{ width }}px; height: {{ height }}px;">
+{% endmacro %} 

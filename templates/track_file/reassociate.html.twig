@@ -1,0 +1,156 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'track_file.reassociate_title'|trans }} {{ file.filePath|split('/')|last }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': artist.name, 'url': path('artist_show', {id: artist.id}), 'icon': 'fas fa-user'},
+    {'text': current_track.album.title, 'url': path('album_show', {id: current_track.album.id}), 'icon': 'fas fa-compact-disc'},
+    {'text': current_track.title, 'url': path('track_files', {id: current_track.id}), 'icon': 'fas fa-music'},
+    {'text': 'track_file.reassociate'|trans, 'url': null, 'active': true, 'icon': 'fas fa-exchange-alt'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container mt-4" data-controller="track-file-reassociate" data-track-file-reassociate-file-id-value="{{ file.id }}">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-exchange-alt text-primary"></i> {{ 'track_file.reassociate_title'|trans }}</h1>
+                <a href="{{ path('track_files', {id: current_track.id}) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> {{ 'app.back'|trans }}
+                </a>
+            </div>
+
+            <!-- Current File Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'track_file.current_file'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>{{ 'track_file.file_path'|trans }}:</strong> <code>{{ file.filePath }}</code></p>
+                            <p><strong>{{ 'track_file.current_track'|trans }}:</strong> {{ current_track.title }}</p>
+                            <p><strong>{{ 'track_file.current_album'|trans }}:</strong> {{ current_track.album.title }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>{{ 'track_file.quality'|trans }}:</strong> 
+                                {% if file.quality %}
+                                    <span class="badge bg-info">{{ file.quality }}</span>
+                                {% else %}
+                                    <span class="text-muted">{{ 'track_file.unknown'|trans }}</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>{{ 'track_file.format'|trans }}:</strong> <span class="badge bg-dark">{{ file.format|upper }}</span></p>
+                            <p><strong>{{ 'track_file.size'|trans }}:</strong> {{ (file.fileSize / 1024 / 1024)|round(2) }} {{ 'track_file.mb'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Matches -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ 'track_file.best_matches'|trans }}</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="findMatchesBtn" data-action="click->track-file-reassociate#findMatches" data-track-file-reassociate-target="findMatchesBtn">
+                        <i class="fas fa-search"></i> {{ 'track_file.find_matches'|trans }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="matchesContainer" data-track-file-reassociate-target="matchesContainer">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <p>{{ 'track_file.click_find_matches'|trans }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Tracks from Same Artist -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'track_file.all_tracks_same_artist'|trans }} ({{ artist.name }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'track_file.track_title'|trans }}</th>
+                                    <th>{{ 'stats.albums'|trans }}</th>
+                                    <th>{{ 'track_file.track_number'|trans }}</th>
+                                    <th>{{ 'track_file.has_files'|trans }}</th>
+                                    <th>{{ 'track_file.actions'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for track in tracks %}
+                                    <tr class="{% if track.id == current_track.id %}table-warning{% endif %}">
+                                        <td>
+                                            <strong>{{ track.title }}</strong>
+                                            {% if track.id == current_track.id %}
+                                                <span class="badge bg-warning">{{ 'track_file.current'|trans }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ track.album.title }}</td>
+                                        <td>{{ track.trackNumber }}</td>
+                                        <td>
+                                            {% if track.hasFile %}
+                                                <span class="badge bg-success">{{ 'track_file.yes'|trans }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ 'track_file.no'|trans }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if track.id != current_track.id %}
+                                                <button class="btn btn-sm btn-primary move-file-btn" 
+                                                        data-track-id="{{ track.id }}"
+                                                        data-track-title="{{ track.title }}"
+                                                        data-album-title="{{ track.album.title }}">
+                                                    <i class="fas fa-arrow-right"></i> {{ 'track_file.move_here'|trans }}
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted">{{ 'track_file.current_track'|trans }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmMoveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'track_file.confirm_move'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>{{ 'track_file.confirm_move_message'|trans }}</p>
+                <div class="alert alert-info">
+                    <strong>{{ 'track_file.from'|trans }}:</strong> {{ current_track.title }} ({{ current_track.album.title }})<br>
+                                            <strong>{{ 'track_file.to'|trans }}:</strong> <span id="targetTrackInfo" data-track-file-reassociate-target="targetTrackInfo"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'app.cancel'|trans }}</button>
+                <button type="button" class="btn btn-primary" id="confirmMoveBtn" data-action="click->track-file-reassociate#confirmMove" data-track-file-reassociate-target="confirmMoveBtn">{{ 'track_file.confirm_move'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %} 

@@ -1,0 +1,305 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create New Task{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        .task-type-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .task-type-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+        .task-type-card.selected {
+            border-color: var(--accent-color);
+            background-color: var(--light-bg);
+        }
+        .task-type-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .entity-input-group {
+            display: none;
+        }
+        .entity-input-group.active {
+            display: block;
+        }
+        .preview-card {
+            background-color: var(--light-bg);
+            border-left: 4px solid var(--accent-color);
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': 'nav.tasks'|trans, 'url': path('tasks_index'), 'icon': 'fas fa-tasks'},
+    {'text': 'tasks.create'|trans, 'url': null, 'active': true, 'icon': 'fas fa-plus'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container-fluid" data-controller="task-creation">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 mb-0">
+                <i class="fas fa-plus me-2"></i>Create New Task
+            </h1>
+            <p class="text-muted mb-0">Create a new background task for processing</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('tasks_index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Tasks
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" id="task-form" data-action="submit->task-creation#submitForm">
+                <!-- Task Type Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-1"></i>Select Task Type
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for taskType in taskTypes %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card task-type-card h-100" data-action="click->task-creation#selectTaskType" data-task-type="{{ taskType }}">
+                                        <div class="card-body text-center">
+                                            <div class="task-type-icon text-primary">
+                                                {% if taskType starts with 'add_' %}
+                                                    <i class="fas fa-plus"></i>
+                                                {% elseif taskType starts with 'update_' %}
+                                                    <i class="fas fa-edit"></i>
+                                                {% elseif taskType starts with 'sync_' %}
+                                                    <i class="fas fa-sync-alt"></i>
+                                                {% elseif taskType starts with 'download_' %}
+                                                    <i class="fas fa-download"></i>
+                                                {% else %}
+                                                    <i class="fas fa-cog"></i>
+                                                {% endif %}
+                                            </div>
+                                            <h6 class="card-title">{{ taskType|replace({'_': ' '})|title }}</h6>
+                                            <p class="card-text text-muted small">
+                                                {% if taskType == 'add_artist' %}
+                                                    Add a new artist to the database
+                                                {% elseif taskType == 'add_album' %}
+                                                    Add a new album to the database
+                                                {% elseif taskType == 'update_artist' %}
+                                                    Update existing artist information
+                                                {% elseif taskType == 'update_album' %}
+                                                    Update existing album information
+                                                {% elseif taskType == 'sync_artist' %}
+                                                    Synchronize artist data with external sources
+                                                {% elseif taskType == 'sync_album' %}
+                                                    Synchronize album data with external sources
+                                                {% elseif taskType == 'download_album' %}
+                                                    Download album files
+                                                {% elseif taskType == 'download_song' %}
+                                                    Download individual song files
+                                                {% else %}
+                                                    {{ taskType|replace({'_': ' '})|title }} task
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <input type="hidden" name="type" id="selected-type" required data-task-creation-target="selectedType">
+                        <div id="type-error" class="text-danger hidden" data-task-creation-target="typeError">
+                            Please select a task type.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entity Information -->
+                <div class="card mb-4" id="entity-card" class="hidden" data-task-creation-target="entityCard">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-1"></i>Entity Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entity_mbid" class="form-label">
+                                        Entity MBID
+                                        <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" title="MusicBrainz identifier for the entity"></i>
+                                    </label>
+                                    <input type="text" name="entity_mbid" id="entity_mbid" class="form-control" placeholder="e.g., f54ba100-0562-4368-9728-a2c9c46cc6b7" data-task-creation-target="entityMbid" data-action="input->task-creation#updatePreview input->task-creation#validateForm">
+                                    <div class="form-text">Preferred identifier for the entity</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="entity_id" class="form-label">
+                                        Entity ID
+                                        <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" title="Internal database ID of the entity"></i>
+                                    </label>
+                                    <input type="number" name="entity_id" id="entity_id" class="form-control" placeholder="e.g., 123" data-task-creation-target="entityId" data-action="input->task-creation#updatePreview input->task-creation#validateForm">
+                                    <div class="form-text">Internal database ID (for updates)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="entity_name" class="form-label">
+                                Entity Name
+                                <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" title="Human-readable name of the entity"></i>
+                            </label>
+                            <input type="text" name="entity_name" id="entity_name" class="form-control" placeholder="e.g., Radiohead" data-task-creation-target="entityName" data-action="input->task-creation#updatePreview input->task-creation#validateForm">
+                            <div class="form-text">Human-readable name (fallback identifier)</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            <strong>Tip:</strong> Provide at least one identifier. MBID is preferred for accuracy, but name can be used as a fallback.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Options -->
+                <div class="card mb-4" id="options-card" class="hidden" data-task-creation-target="optionsCard">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-1"></i>Task Options
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="priority" class="form-label">
+                                        Priority
+                                        <i class="fas fa-info-circle text-muted" data-bs-toggle="tooltip" title="Higher numbers are processed first"></i>
+                                    </label>
+                                    <select name="priority" id="priority" class="form-select" data-task-creation-target="priority" data-action="change->task-creation#updatePreview">
+                                        <option value="0">Normal (0)</option>
+                                        <option value="1">Low (1)</option>
+                                        <option value="3">Medium (3)</option>
+                                        <option value="5" selected>High (5)</option>
+                                        <option value="10">Critical (10)</option>
+                                    </select>
+                                    <div class="form-text">Higher priority tasks are processed first</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Task Processing</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check-duplicates" checked>
+                                        <label class="form-check-label" for="check-duplicates">
+                                            Check for duplicates
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Prevent creation of duplicate tasks</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ path('tasks_index') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary" id="submit-btn" disabled data-task-creation-target="submitBtn">
+                        <i class="fas fa-plus me-1"></i>Create Task
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Task Preview -->
+            <div class="card preview-card mb-4" id="preview-card" class="hidden" data-task-creation-target="previewCard">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-eye me-1"></i>Task Preview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Type:</dt>
+                        <dd class="col-sm-8" id="preview-type" data-task-creation-target="previewType">-</dd>
+
+                        <dt class="col-sm-4">Entity:</dt>
+                        <dd class="col-sm-8" id="preview-entity" data-task-creation-target="previewEntity">-</dd>
+
+                        <dt class="col-sm-4">Priority:</dt>
+                        <dd class="col-sm-8" id="preview-priority" data-task-creation-target="previewPriority">-</dd>
+
+                        <dt class="col-sm-4">Unique Key:</dt>
+                        <dd class="col-sm-8">
+                            <code id="preview-unique-key" data-task-creation-target="previewUniqueKey">-</code>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Task Type Info -->
+            <div class="card mb-4" id="info-card" class="hidden" data-task-creation-target="infoCard">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info me-1"></i>Task Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="task-type-info" data-task-creation-target="taskTypeInfo">
+                        Select a task type to see more information.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-question-circle me-1"></i>Help
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Task Types:</h6>
+                    <ul class="small">
+                        <li><strong>Add:</strong> Create new entities in the database</li>
+                        <li><strong>Update:</strong> Refresh existing entity data</li>
+                        <li><strong>Sync:</strong> Synchronize with external sources</li>
+                        <li><strong>Download:</strong> Download media files</li>
+                    </ul>
+
+                    <h6 class="mt-3">Identifiers:</h6>
+                    <ul class="small">
+                        <li><strong>MBID:</strong> MusicBrainz unique identifier (preferred)</li>
+                        <li><strong>ID:</strong> Internal database ID</li>
+                        <li><strong>Name:</strong> Human-readable name (fallback)</li>
+                    </ul>
+
+                    <h6 class="mt-3">Priorities:</h6>
+                    <ul class="small">
+                        <li><strong>Critical (10):</strong> Urgent tasks</li>
+                        <li><strong>High (5):</strong> Important tasks</li>
+                        <li><strong>Normal (0):</strong> Standard priority</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

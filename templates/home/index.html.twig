@@ -1,0 +1,224 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'app.title'|trans }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': null, 'active': true, 'icon': 'fas fa-home'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div data-controller="home">
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-home me-2"></i>{{ 'app.dashboard'|trans }}</h1>
+            <div>
+                <button class="btn btn-primary me-2" data-action="click->home#navigateToLibrary">
+                    <i class="fas fa-database me-1"></i>{{ 'nav.libraries'|trans }}
+                </button>
+                {% if enabledLibrariesCount > 0 %}
+                <button class="btn btn-success" data-action="click->home#navigateToArtist">
+                    <i class="fas fa-user me-1"></i>{{ 'nav.artists'|trans }}
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistiques globales -->
+        <div class="row mb-4">
+            {% if enabledLibrariesCount > 0 %}
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalArtists }}</h3>
+                            <p>{{ 'stats.artists'|trans }}</p>
+                        </div>
+                        <i class="fas fa-user fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if enabledLibrariesCount > 0 %}
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalAlbums }}</h3>
+                            <p>{{ 'stats.albums'|trans }}</p>
+                        </div>
+                        <i class="fas fa-compact-disc fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if enabledLibrariesCount > 0 %}
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalTracks }}</h3>
+                            <p>{{ 'stats.tracks'|trans }}</p>
+                        </div>
+                        <i class="fas fa-music fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalLibraries }}</h3>
+                            <p>{{ 'stats.libraries'|trans }}</p>
+                        </div>
+                        <i class="fas fa-database fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progression des téléchargements -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-download me-2"></i>{{ 'monitoring.progress'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if enabledLibrariesCount > 0 %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ 'stats.downloaded_albums'|trans }}</span>
+                                <span>{{ stats.downloadedAlbums }} / {{ stats.totalAlbums }}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-dynamic" role="progressbar"
+                                     style="width: {{ stats.downloadProgress }}%"
+                                     aria-valuenow="{{ stats.downloadProgress }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.downloadProgress }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ 'stats.downloaded_tracks'|trans }}</span>
+                                <span>{{ stats.downloadedTracks }} / {{ stats.totalTracks }}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-dynamic" role="progressbar"
+                                     style="width: {{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100) : 0 }}%"
+                                     aria-valuenow="{{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100) : 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100)|number_format(1, '.', '') : 0 }}%
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center">
+                            <p class="text-muted">{{ 'home.no_libraries_message'|trans|default('No enabled libraries found. Please add and enable a library first.') }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-eye me-2"></i>{{ 'monitoring.title'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if enabledLibrariesCount > 0 %}
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h4 text-primary">{{ stats.monitoredArtists }}</div>
+                                <small class="text-muted">{{ 'stats.monitored_artists'|trans }}</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 text-success">{{ stats.monitoredAlbums }}</div>
+                                <small class="text-muted">{{ 'stats.monitored_albums'|trans }}</small>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center">
+                            <p class="text-muted">{{ 'home.no_libraries_message'|trans|default('No enabled libraries found. Please add and enable a library first.') }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bolt me-2"></i>{{ 'quick_actions.title'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <button class="btn btn-outline-success w-100" data-bs-toggle="modal" data-bs-target="#addLibraryModal">
+                                    <i class="fas fa-database me-2"></i>{{ 'quick_actions.add_library'|trans }}
+                                </button>
+                            </div>
+                            {% if enabledLibrariesCount > 0 %}
+                            <div class="col-md-3 mb-3">
+                                <button class="btn btn-outline-warning w-100" data-action="click->home#syncAllArtists">
+                                    <i class="fas fa-cloud-download-alt me-2"></i>{{ 'quick_actions.sync_artists'|trans }}
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="row mt-3">
+                            {% if enabledLibrariesCount > 0 %}
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ path('unmatched_tracks_index') }}" class="btn btn-outline-danger w-100">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>{{ 'quick_actions.unmatched_tracks'|trans }}
+                                </a>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ path('app_scan_libraries') }}" class="btn btn-outline-dark w-100">
+                                    <i class="fas fa-search me-2"></i>{{ 'quick_actions.scan_libraries'|trans }}
+                                </a>
+                            </div>
+                            {% endif %}
+
+                            <!-- Plugin Hook: Quick Actions -->
+                            {% hook 'home.quick_actions' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plugin Hook: Dashboard Widgets -->
+<div class="row">
+    <div class="col-12">
+        {% hook 'dashboard.widgets' %}
+    </div>
+</div>
+
+<!-- Include shared library modal -->
+{% include 'partials/_library_modal.html.twig' %}
+
+
+
+
+{% endblock %}

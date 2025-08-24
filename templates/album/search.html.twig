@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'album.total'|trans }} {{ 'app.search'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>Recherche d'albums</h1>
+        <p>{{ 'app.search'|trans }} {{ 'app.results'|trans }}: {{ query }}</p>
+    </div>
+{% endblock %} 

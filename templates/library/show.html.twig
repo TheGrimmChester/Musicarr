@@ -1,0 +1,218 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ library.name }} - Musicarr{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': 'nav.libraries'|trans, 'url': path('library_index'), 'icon': 'fas fa-folder-open'},
+    {'text': library.name, 'url': null, 'active': true, 'icon': 'fas fa-folder'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container-fluid" data-controller="library" data-library-id="{{ library.id }}" data-library-path="{{ library.path }}" data-library-name="{{ library.name }}">
+    <div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1><i class="fas fa-database me-2"></i>{{ library.name }}</h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-folder me-1"></i>{{ library.path }}
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-primary me-2" data-action="click->library#scanLibrary">
+                    <i class="fas fa-sync me-1"></i>{{ 'library.scan'|trans }}
+                </button>
+                <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#editLibraryModal">
+                    <i class="fas fa-edit me-1"></i>{{ 'library.edit'|trans }}
+                </button>
+                <button class="btn btn-outline-danger me-2" data-action="click->library#deleteLibrary">
+                    <i class="fas fa-trash me-1"></i>{{ 'library.delete'|trans }}
+                </button>
+                <a href="{{ path('library_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>{{ 'app.back'|trans }}
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistiques de la bibliothèque -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalAlbums }}</h3>
+                            <p>Albums</p>
+                        </div>
+                        <i class="fas fa-compact-disc fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.totalTracks }}</h3>
+                            <p>{{ 'library.tracks'|trans }}</p>
+                        </div>
+                        <i class="fas fa-music fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="stats-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3>{{ stats.downloadedAlbums }}</h3>
+                            <p>{{ 'library.downloaded'|trans }}</p>
+                        </div>
+                        <i class="fas fa-download fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration de la bibliothèque -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cog me-2"></i>Configuration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>{{ 'library.status'|trans }}:</strong>
+                                <span class="badge bg-{{ library.enabled ? 'success' : 'danger' }}">
+                                    {{ library.enabled ? 'library.active'|trans : 'library.inactive'|trans }}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong>{{ 'library.scan_automatically'|trans }}:</strong>
+                                <span class="badge bg-{{ library.scanAutomatically ? 'success' : 'warning' }}">
+                                    {{ library.scanAutomatically ? 'library.enabled'|trans : 'library.disabled'|trans }}
+                                </span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>{{ 'library.scan_interval'|trans }}:</strong><br>
+                                <small class="text-muted">{{ library.scanInterval }} {{ 'library.minutes'|trans }}</small>
+                            </div>
+                            <div class="col-6">
+                                <strong>{{ 'library.last_scan'|trans }}:</strong><br>
+                                <small class="text-muted">{{ library.lastScan|date('d/m/Y H:i') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Progression
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Albums téléchargés</span>
+                                <span>{{ stats.downloadedAlbums }} / {{ stats.totalAlbums }}</span>
+                            </div>
+                            <div class="progress">
+                                                                  <div class="progress-bar progress-bar-dynamic" role="progressbar"
+                                      style="width: {{ stats.totalAlbums > 0 ? (stats.downloadedAlbums / stats.totalAlbums * 100) : 0 }}%"
+                                     aria-valuenow="{{ stats.totalAlbums > 0 ? (stats.downloadedAlbums / stats.totalAlbums * 100) : 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.totalAlbums > 0 ? (stats.downloadedAlbums / stats.totalAlbums * 100)|number_format(1, '.', '') : 0 }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Pistes téléchargées</span>
+                                <span>{{ stats.downloadedTracks }} / {{ stats.totalTracks }}</span>
+                            </div>
+                            <div class="progress">
+                                                                  <div class="progress-bar progress-bar-dynamic" role="progressbar"
+                                      style="width: {{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100) : 0 }}%"
+                                     aria-valuenow="{{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100) : 0 }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ stats.totalTracks > 0 ? (stats.downloadedTracks / stats.totalTracks * 100)|number_format(1, '.', '') : 0 }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour éditer la bibliothèque -->
+<div class="modal fade" id="editLibraryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'library.edit'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editLibraryForm">
+                    <div class="mb-3">
+                        <label for="editLibraryName" class="form-label">{{ 'library.name'|trans }}</label>
+                        <input type="text" class="form-control" id="editLibraryName" value="{{ library.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLibraryPath" class="form-label">{{ 'library.path'|trans }}</label>
+                        <div id="editFolderTreeContainer"></div>
+                        <div class="form-text">{{ 'library.path_example'|trans }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editLibraryEnabled" {{ library.enabled ? 'checked' : '' }}>
+                            <label class="form-check-label" for="editLibraryEnabled">
+                                {{ 'library.enabled'|trans }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editLibraryScanAuto" {{ library.scanAutomatically ? 'checked' : '' }}>
+                            <label class="form-check-label" for="editLibraryScanAuto">
+                                {{ 'library.scan_automatically'|trans }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLibraryScanInterval" class="form-label">{{ 'library.scan_interval'|trans }}</label>
+                        <input type="number" class="form-control" id="editLibraryScanInterval" value="{{ library.scanInterval }}" min="1" max="1440">
+                        <div class="form-text">{{ 'library.scan_interval_help'|trans }}</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'app.cancel'|trans }}</button>
+                <button type="button" class="btn btn-primary" id="saveEditLibraryBtn">{{ 'app.save'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

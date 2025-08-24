@@ -1,0 +1,54 @@
+{# Album Management Buttons - Main Project Template #}
+{# Access context data using Sylius TwigHooks functions #}
+{% set album = get_hookable_context().album %}
+
+<!-- Download & File Management Row -->
+<button class="btn action-btn secondary" data-action="click->album-management#scanAlbumAudio" data-album-id="{{ album.id }}">
+    <i class="fas fa-music"></i>
+    <span>{{ 'track.scan_audio'|trans }}</span>
+</button>
+
+<!-- Album Management Actions Dropdown -->
+<div class="dropdown d-inline-block">
+    <button class="btn action-btn tertiary dropdown-toggle" type="button" id="albumActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-cog"></i>
+        <span>{{ 'album.actions'|trans|default('Album Actions') }}</span>
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="albumActionsDropdown">
+        <li>
+            <button class="dropdown-item" data-action="click->album-management#markAlbumDownloaded" data-album-id="{{ album.id }}">
+                <i class="fas fa-download me-2"></i>
+                {{ 'album.mark_downloaded'|trans }}
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" data-action="click->album-management#updateAlbum" data-album-id="{{ album.id }}">
+                <i class="fas fa-sync me-2"></i>
+                {{ 'album.update_album'|trans }}
+            </button>
+        </li>
+        <li>
+            <button class="dropdown-item" data-action="click->album-management#showOtherReleases" data-album-id="{{ album.id }}">
+                <i class="fas fa-exchange-alt me-2"></i>
+                {{ 'album.change_release'|trans }}
+            </button>
+        </li>
+    </ul>
+</div>
+
+{#{% if album.releaseGroupMbid %}#}
+{#<button class="action-btn tertiary" data-action="click->album-management#clearAlbumCache" data-mbid="{{ album.releaseGroupMbid }}" data-title="{{ album.title|e('js') }}">#}
+{#    <i class="fas fa-broom"></i>#}
+{#    <span>Clear Cache</span>#}
+{#</button>#}
+{#{% endif %}#}
+
+<!-- Navigation & Maintenance Row -->
+{#<button class="action-btn danger"#}
+{#        data-action="click->album-management#deleteAlbum"#}
+{#        data-album-id="{{ album.id }}"#}
+{#        data-album-title="{{ album.title }}"#}
+{#        data-artist-name="{{ album.artist.name }}">#}
+{#    <i class="fas fa-trash"></i>#}
+{#    <span>{{ 'album.delete_album'|trans }}</span>#}
+{#</button>#}

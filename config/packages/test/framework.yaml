@@ -1,0 +1,16 @@
+framework:
+    test: true
+    session:
+        storage_factory_id: session.storage.factory.mock_file
+    profiler:
+        collect: false
+    http_client:
+        default_options:
+            extra:
+                curl:
+                    CURLOPT_NO_VERIFY: 1
+                    CURLOPT_SSL_VERIFYPEER: 0
+                    CURLOPT_SSL_VERIFYHOST: 0
+    cache:
+        app: cache.adapter.array
+    http_method_override: false 

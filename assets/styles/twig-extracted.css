@@ -1,0 +1,150 @@
+/* Extracted inline styles from Twig files */
+
+/* Placeholder styles */
+.placeholder-image {
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.placeholder-image.placeholder-image--rect {
+    border-radius: 0;
+}
+
+/* Dynamic placeholder dimensions - these will be overridden by inline styles when needed */
+.placeholder-image[style*="width"] {
+    /* Inline width will override this */
+}
+
+.placeholder-image[style*="height"] {
+    /* Inline height will override this */
+}
+
+.placeholder-icon {
+    font-size: 48px;
+}
+
+/* Table column widths */
+.table-col-cover {
+    width: 60px;
+}
+
+.table-col-medium {
+    width: 80px;
+}
+
+.table-col-duration {
+    width: 80px;
+}
+
+.table-col-year {
+    width: 80px;
+}
+
+.table-col-type {
+    width: 100px;
+}
+
+.table-col-tracks {
+    width: 80px;
+}
+
+.table-col-status {
+    width: 120px;
+}
+
+.table-col-monitor {
+    width: 80px;
+}
+
+.table-col-actions {
+    width: 200px;
+}
+
+.table-col-track-number {
+    width: 60px;
+}
+
+/* Album cover thumbnails */
+.album-cover-thumb {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+}
+
+.album-cover-placeholder {
+    width: 50px;
+    height: 50px;
+}
+
+/* Artist profile image */
+.artist-profile-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 3px solid #fff;
+}
+
+.artist-profile-placeholder {
+    width: 120px;
+    height: 120px;
+    border: 3px solid #fff;
+}
+
+/* Progress bar height */
+.progress-custom-height {
+    height: 25px;
+}
+
+/* Folder tree max height */
+.folder-tree-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Infinite scroll trigger */
+.infinite-scroll-trigger {
+    height: 1px;
+}
+
+/* Hidden elements (will be controlled by JavaScript) */
+.hidden {
+    display: none;
+}
+
+/* Dynamic progress bar widths */
+.progress-bar-dynamic {
+    transition: width 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-col-actions {
+        width: 150px;
+    }
+    
+    .artist-profile-image,
+    .artist-profile-placeholder {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .placeholder-icon {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-col-actions {
+        width: 100px;
+    }
+    
+    .artist-profile-image,
+    .artist-profile-placeholder {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .placeholder-icon {
+        font-size: 24px;
+    }
+}

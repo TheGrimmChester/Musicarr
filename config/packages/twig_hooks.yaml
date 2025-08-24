@@ -1,0 +1,8 @@
+sylius_twig_hooks:
+    enable_autoprefixing: true
+    hook_name_section_separator: '.'
+    hooks:
+        'album.actions':
+            main_album_management:
+                template: 'album/album_management_buttons.html.twig'
+                priority: 0

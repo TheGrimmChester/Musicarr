@@ -1,0 +1,51 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        APP_USER_ID: ${USER_ID:-1000}
+        APP_GROUP_ID: ${GROUP_ID:-1000}
+    container_name: musicarr-app
+    env_file:
+      - .env.docker
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8795:8000"
+    environment:
+      - APP_USER_ID=${USER_ID:-1000}
+      - APP_GROUP_ID=${GROUP_ID:-1000}
+    command: ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+    volumes:
+        - metadata_data:/app/public/metadata
+        - persistent_config:/app/var/persistent/config
+
+  db:
+    image: mariadb:11.3.2
+    container_name: musicarr-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: musicarr
+      MYSQL_USER: musicarr
+      MYSQL_PASSWORD: musicarr
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: musicarr-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  db_data:
+  redis_data:
+  metadata_data:
+  persistent_config:

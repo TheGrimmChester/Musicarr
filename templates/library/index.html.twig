@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'library.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid" data-controller="library-index">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-database me-2"></i>{{ 'library.title'|trans }}</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLibraryModal">
+            <i class="fas fa-plus me-1"></i>{{ 'library.add'|trans }}
+        </button>
+    </div>
+
+    <!-- Loading indicator -->
+    <div data-library-index-target="loadingIndicator" class="text-center py-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">{{ 'js.loading'|trans }}</span>
+        </div>
+        <p class="mt-2 text-muted">{{ 'library.loading'|trans|default('Loading libraries...') }}</p>
+    </div>
+
+    <div class="row" data-library-index-target="container">
+        <!-- Libraries will be loaded here -->
+    </div>
+
+    <!-- End of data indicator -->
+    <div data-library-index-target="endOfDataIndicator" class="text-center py-4 text-muted" style="display: none;">
+        <i class="fas fa-check-circle"></i>
+        <p class="mt-2">{{ 'library.all_loaded'|trans|default('All libraries loaded') }}</p>
+    </div>
+</div>
+
+<!-- Include shared library modal -->
+{% include 'partials/_library_modal.html.twig' %}
+{% endblock %} 

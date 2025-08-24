@@ -1,0 +1,277 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'unmatched_track.show_title'|trans }} - {{ unmatched_track.title ?: unmatched_track.fileName }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home')},
+    {'text': 'unmatched_track.title'|trans, 'url': path('unmatched_tracks_index')},
+    {'text': unmatched_track.title ?: unmatched_track.fileName, 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="container-fluid" data-controller="unmatched-track" data-track-id="{{ unmatched_track.id }}">
+    <div class="row">
+    <div class="col-12">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-exclamation-triangle text-warning me-2"></i>{{ 'unmatched_track.show_title'|trans }}</h1>
+            <div>
+                <button class="btn btn-outline-danger" data-action="click->unmatched-track#deleteTrack">
+                    <i class="fas fa-trash me-1"></i>{{ 'unmatched_track.delete'|trans }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Informations de la piste -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>{{ 'unmatched_track.information'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>{{ 'unmatched_track.title_label'|trans }}:</strong> {{ unmatched_track.title ?: 'unmatched_track.not_detected'|trans }}<br>
+                                <strong>{{ 'unmatched_track.artist_label'|trans }}:</strong> {{ unmatched_track.artist ?: 'unmatched_track.not_detected'|trans }}<br>
+                                <strong>{{ 'unmatched_track.album_label'|trans }}:</strong> {{ unmatched_track.album ?: 'unmatched_track.not_detected'|trans }}<br>
+                                <strong>{{ 'unmatched_track.extension_label'|trans }}:</strong> {{ unmatched_track.extension ?: 'N/A' }}<br>
+                                <strong>{{ 'unmatched_track.duration_label'|trans }}:</strong>
+                                {% if unmatched_track.duration %}
+                                    {% set minutes = (unmatched_track.duration / 60)|round(0, 'floor') %}
+                                    {% set seconds = unmatched_track.duration % 60 %}
+                                    {% set secondsFormatted = seconds < 10 ? '0' ~ seconds : seconds %}
+                                    {{ minutes }}:{{ secondsFormatted }}
+                                {% else %}
+                                    <span class="text-muted">{{ 'unmatched_track.not_available'|trans }}</span>
+                                {% endif %}<br>
+                                <strong>{{ 'unmatched_track.size_label'|trans }}:</strong>
+                                {% if unmatched_track.fileSize %}
+                                    {{ (unmatched_track.fileSize / 1024 / 1024)|round(2) }} MB
+                                {% else %}
+                                    <span class="text-muted">{{ 'unmatched_track.not_available'|trans }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>{{ 'unmatched_track.file_label'|trans }}:</strong> {{ unmatched_track.fileName }}<br>
+                                <strong>{{ 'unmatched_track.path_label'|trans }}:</strong> <code class="small">{{ unmatched_track.getRelativePath() }}</code><br>
+                                <strong>{{ 'unmatched_track.library_label'|trans }}:</strong> {{ unmatched_track.library.name }}<br>
+                                <strong>{{ 'unmatched_track.discovered_label'|trans }}:</strong> {{ unmatched_track.discoveredAt|date('d/m/Y H:i') }}<br>
+                                <strong>{{ 'unmatched_track.status_label'|trans }}:</strong>
+                                <span class="badge bg-{{ unmatched_track.isMatched ? 'success' : 'warning' }}">
+                                    {{ unmatched_track.isMatched ? 'unmatched_track.associated'|trans : 'unmatched_track.not_associated'|trans }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file me-2"></i>{{ 'unmatched_track.file_info'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>{{ 'unmatched_track.file_name'|trans }}:</strong><br>
+                            <code class="small">{{ unmatched_track.fileName }}</code>
+                        </div>
+                        <div class="mb-3">
+                            <strong>{{ 'unmatched_track.relative_path'|trans }}:</strong><br>
+                            <code class="small">{{ unmatched_track.getRelativePath() }}</code>
+                        </div>
+                        <div class="mb-3">
+                            <strong>{{ 'unmatched_track.last_modified'|trans }}:</strong><br>
+                            <span class="text-muted">{{ 'unmatched_track.not_available'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Association à un artiste -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user me-2"></i>{{ 'unmatched_track.artist_association'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="artistSearch" class="form-label">{{ 'unmatched_track.search_artist'|trans }}</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="artistSearch" placeholder="{{ 'unmatched_track.artist_placeholder'|trans }}" data-unmatched-track-target="artistSearch">
+                                        <button class="btn btn-outline-primary" type="button" data-action="click->unmatched-track#searchArtists">
+                                            <i class="fas fa-search me-1"></i>{{ 'unmatched_track.search'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="albumSearch" class="form-label">{{ 'unmatched_track.search_album'|trans }}</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="albumSearch" placeholder="{{ 'unmatched_track.album_placeholder'|trans }}" data-unmatched-track-target="albumSearch">
+                                        <button class="btn btn-outline-primary" type="button" data-action="click->unmatched-track#searchAlbums">
+                                            <i class="fas fa-search me-1"></i>{{ 'unmatched_track.search'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading spinner -->
+                        <div id="loadingSpinner" class="text-center" style="display: none;" data-unmatched-track-target="loadingSpinner">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">{{ 'js.loading'|trans }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Search results -->
+                        <div id="searchResults" style="display: none;" data-unmatched-track-target="searchResults">
+                            <h6>{{ 'unmatched_track.artist_suggestions'|trans }}</h6>
+                            <div id="artistSuggestions" class="list-group" data-unmatched-track-target="artistSuggestions">
+                                <!-- Les suggestions d'artistes seront affichées ici -->
+                            </div>
+                        </div>
+
+                        <!-- Album selection section -->
+                        <div id="albumSelectionSection" style="display: none;" data-unmatched-track-target="albumSelectionSection">
+                            <h6 class="mt-3">{{ 'unmatched_track.album_suggestions'|trans }}</h6>
+                            <div id="albumSearchResults" style="display: none;" data-unmatched-track-target="albumSearchResults">
+                                <div id="albumLoadingSpinner" class="text-center" style="display: none;" data-unmatched-track-target="albumLoadingSpinner">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">{{ 'js.loading'|trans }}</span>
+                                    </div>
+                                </div>
+                                <div id="albumSuggestions" class="list-group" data-unmatched-track-target="albumSuggestions">
+                                    <!-- Les suggestions d'albums seront affichées ici -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Association manuelle -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-hand-paper me-2"></i>{{ 'unmatched_track.manual_association'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manualArtistSearch" class="form-label">{{ 'unmatched_track.manual_artist_search'|trans }}</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="manualArtistSearch" placeholder="{{ 'unmatched_track.artist_placeholder'|trans }}" data-unmatched-track-target="manualArtistSearch">
+                                        <button class="btn btn-outline-primary" type="button" data-action="click->unmatched-track#searchManualArtists">
+                                            <i class="fas fa-search me-1"></i>{{ 'unmatched_track.search'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manualAlbumSearch" class="form-label">{{ 'unmatched_track.manual_album_search'|trans }}</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="manualAlbumSearch" placeholder="{{ 'unmatched_track.album_placeholder'|trans }}" data-unmatched-track-target="manualAlbumSearch">
+                                        <button class="btn btn-outline-success" type="button" data-action="click->unmatched-track#searchManualAlbums">
+                                            <i class="fas fa-search me-1"></i>{{ 'unmatched_track.search'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manualTrackSearch" class="form-label">{{ 'unmatched_track.manual_track_search'|trans }}</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="manualTrackSearch" placeholder="{{ 'unmatched_track.track_placeholder'|trans }}" data-unmatched-track-target="manualTrackSearch">
+                                        <button class="btn btn-outline-info" type="button" data-action="click->unmatched-track#searchManualTracks">
+                                            <i class="fas fa-search me-1"></i>{{ 'unmatched_track.search'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual search results -->
+                        <div id="manualSearchResults" style="display: none;" data-unmatched-track-target="manualSearchResults">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6>{{ 'unmatched_track.artist_suggestions'|trans }}</h6>
+                                    <div id="manualArtistSuggestions" class="list-group" data-unmatched-track-target="manualArtistSuggestions">
+                                        <!-- Les suggestions d'artistes manuelles seront affichées ici -->
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>{{ 'unmatched_track.album_suggestions'|trans }}</h6>
+                                    <div id="manualAlbumSuggestions" class="list-group" data-unmatched-track-target="manualAlbumSuggestions">
+                                        <!-- Les suggestions d'albums manuels seront affichées ici -->
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>{{ 'unmatched_track.track_suggestions'|trans }}</h6>
+                                    <div id="manualTrackSuggestions" class="list-group" data-unmatched-track-target="manualTrackSuggestions">
+                                        <!-- Les suggestions de pistes manuelles seront affichées ici -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Association summary -->
+                        <div id="associationSection" style="display: none;" data-unmatched-track-target="associationSection">
+                            <h6 class="mt-3">{{ 'unmatched_track.association_summary'|trans }}</h6>
+                            <div id="associationSummary" class="alert alert-info" data-unmatched-track-target="associationSummary">
+                                <!-- Le résumé de l'association sera affiché ici -->
+                            </div>
+                            <button class="btn btn-success" data-action="click->unmatched-track#associateManualTrack">
+                                <i class="fas fa-link me-1"></i>{{ 'unmatched_track.associate_track'|trans }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tools me-2"></i>{{ 'unmatched_track.actions'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-outline-info" data-action="click->unmatched-track#refreshMetadata">
+                            <i class="fas fa-sync-alt me-1"></i>{{ 'unmatched_track.refresh_metadata'|trans }}
+                        </button>
+                        <button class="btn btn-outline-danger" data-action="click->unmatched-track#deleteTrack">
+                            <i class="fas fa-trash me-1"></i>{{ 'unmatched_track.delete'|trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

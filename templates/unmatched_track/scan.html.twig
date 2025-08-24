@@ -1,0 +1,97 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'unmatched_track.scan_libraries'|trans }}{% endblock %}
+
+{% block body %}
+<div class="container-fluid" data-controller="unmatched-track-scan">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-search"></i> {{ 'unmatched_track.scan_libraries'|trans }}</h1>
+                <div>
+                    <a href="{{ path('unmatched_tracks_index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> {{ 'button.back'|trans }}
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ 'unmatched_track.scan_libraries'|trans }}</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if enabledLibrariesCount > 0 %}
+                            <p>{{ 'unmatched_track.scan_description'|trans }}</p>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>{{ 'unmatched_track.supported_formats'|trans }} :</strong> MP3, FLAC, M4A, WAV, OGG, AAC
+                            </div>
+
+                            <form id="scanForm" data-unmatched-track-scan-target="scanForm" data-action="submit->unmatched-track-scan#startScan">
+                                <div class="mb-3">
+                                    <label for="librarySelect" class="form-label">{{ 'unmatched_track.library_to_scan'|trans }} :</label>
+                                    <select id="librarySelect" class="form-select" data-unmatched-track-scan-target="librarySelect">
+                                        <option value="">{{ 'unmatched_track.all_libraries_option'|trans }}</option>
+                                        {% for library in libraries %}
+                                        <option value="{{ library.id }}">{{ library.name }} ({{ library.path }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="dryRunCheck" checked data-unmatched-track-scan-target="dryRunCheck">
+                                        <label class="form-check-label" for="dryRunCheck">
+                                            {{ 'unmatched_track.dry_run_mode'|trans }}
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="forceCheck" data-unmatched-track-scan-target="forceCheck">
+                                        <label class="form-check-label" for="forceCheck">
+                                            {{ 'unmatched_track.force_scan'|trans }}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" id="startScanBtn" data-unmatched-track-scan-target="startScanBtn">
+                                    <i class="fas fa-play"></i> {{ 'unmatched_track.start_scan'|trans }}
+                                </button>
+                            </form>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                                <h4>{{ 'home.no_libraries_message'|trans|default('No enabled libraries found. Please add and enable a library first.') }}</h4>
+                                <p class="text-muted">{{ 'unmatched_track.need_library_to_scan'|trans|default('You need to create and enable at least one library before you can scan for files.') }}</p>
+                                <a href="{{ path('library_index') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-1"></i>{{ 'quick_actions.add_library'|trans|default('Add Library') }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if enabledLibrariesCount > 0 %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ 'naming_pattern.test_results'|trans }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="scanResults" data-unmatched-track-scan-target="scanResults">
+                                <p class="text-muted">{{ 'unmatched_track.no_scan_performed'|trans }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

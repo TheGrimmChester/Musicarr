@@ -1,0 +1,240 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'association.config.title'|trans }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home')},
+    {'text': 'association.config.title'|trans, 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="container-fluid" data-controller="association-config">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-link text-primary"></i> {{ 'association.config.title'|trans }}</h1>
+            </div>
+
+            <!-- General Settings -->
+            <form method="POST" action="{{ path('association_config_save') }}" data-action="submit->association-config#saveConfig">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'association.config.general'|trans }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="autoAssociationEnabled" 
+                                           name="association_config[auto_association]"
+                                           {{ config['auto_association'] ? 'checked' : '' }}
+                                           data-association-config-target="autoAssociationEnabled">
+                                    <label class="form-check-label" for="autoAssociationEnabled">
+                                        <strong>{{ 'association.config.auto_association_enabled'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.auto_association_help'|trans }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Score Threshold Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'association.config.scoring'|trans }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="minimumScoreThreshold" class="form-label">
+                                    <strong>{{ 'association.config.minimum_score'|trans }}</strong>
+                                </label>
+                                <div class="input-group mb-3">
+                                    <input type="number" class="form-control" id="minimumScoreThreshold" 
+                                           name="association_config[min_score]"
+                                           value="{{ config['min_score'] ?? 85 }}"
+                                           min="0" max="100" step="0.1"
+                                           data-association-config-target="minimumScoreThreshold"
+                                           data-action="input->association-config#updateThresholdDisplay">
+                                    <span class="input-group-text">/100</span>
+                                </div>
+                                <div class="form-text">{{ 'association.config.minimum_score_help'|trans }}</div>
+                                
+                                <!-- Score Quality Indicators -->
+                                <div class="mt-3">
+                                    <small class="text-muted">{{ 'association.config.score_guide'|trans }}:</small>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success me-2">90-100: {{ 'association.config.excellent'|trans }}</span>
+                                        <span class="badge bg-warning me-2">70-89: {{ 'association.config.good'|trans }}</span>
+                                        <span class="badge bg-orange me-2">50-69: {{ 'association.config.fair'|trans }}</span>
+                                        <span class="badge bg-danger">0-49: {{ 'association.config.poor'|trans }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ 'association.config.current_threshold'|trans }}</h6>
+                                        <div class="d-flex align-items-center">
+                                            <span id="currentThresholdDisplay" class="h4 mb-0 me-2" data-association-config-target="currentThresholdDisplay">{{ config['min_score'] ?? 85 }}</span>
+                                            <span class="text-muted">/100</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span id="thresholdQuality" class="badge bg-success" data-association-config-target="thresholdQuality">{{ 'association.config.excellent'|trans }}</span>
+                                        </div>
+                                        <button id="testThresholdBtn" class="btn btn-sm btn-outline-primary mt-2" data-action="click->association-config#testThreshold">
+                                            <i class="fas fa-test-tube"></i> {{ 'association.config.test_threshold'|trans }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matching Rules -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ 'association.config.matching_rules'|trans }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireExactArtistMatch" 
+                                           name="association_config[exact_artist_match]"
+                                           {{ config['exact_artist_match'] ? 'checked' : '' }}
+                                           data-association-config-target="requireExactArtistMatch">
+                                    <label class="form-check-label" for="requireExactArtistMatch">
+                                        <strong>{{ 'association.config.exact_artist'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.exact_artist_help'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireExactAlbumMatch" 
+                                           name="association_config[exact_album_match]"
+                                           {{ config['exact_album_match'] ? 'checked' : '' }}
+                                           data-association-config-target="requireExactAlbumMatch">
+                                    <label class="form-check-label" for="requireExactAlbumMatch">
+                                        <strong>{{ 'association.config.exact_album'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.exact_album_help'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireExactDurationMatch" 
+                                           name="association_config[exact_duration_match]"
+                                           {{ config['exact_duration_match'] ? 'checked' : '' }}
+                                           data-association-config-target="requireExactDurationMatch">
+                                    <label class="form-check-label" for="requireExactDurationMatch">
+                                        <strong>{{ 'association.config.exact_duration'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.exact_duration_help'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireExactYearMatch" 
+                                           name="association_config[exact_year_match]"
+                                           {{ config['exact_year_match'] ? 'checked' : '' }}
+                                           data-association-config-target="requireExactYearMatch">
+                                    <label class="form-check-label" for="requireExactYearMatch">
+                                        <strong>{{ 'association.config.exact_year'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.exact_year_help'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="requireExactTitleMatch" 
+                                           name="association_config[exact_title_match]"
+                                           {{ config['exact_title_match'] ? 'checked' : '' }}
+                                           data-association-config-target="requireExactTitleMatch">
+                                    <label class="form-check-label" for="requireExactTitleMatch">
+                                        <strong>{{ 'association.config.exact_title'|trans }}</strong>
+                                    </label>
+                                    <div class="form-text">{{ 'association.config.exact_title_help'|trans }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" id="resetBtn" class="btn btn-outline-warning" data-action="click->association-config#resetConfig">
+                                <i class="fas fa-undo"></i> {{ 'config.reset'|trans }}
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+
+            <!-- Statistics -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ 'association.config.statistics'|trans }}</h5>
+                    <button id="refreshStatsBtn" class="btn btn-outline-primary btn-sm" data-action="click->association-config#refreshStatistics">
+                        <i class="fas fa-sync-alt"></i> {{ 'association.config.refresh'|trans }}
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-primary" id="totalAssociations" data-association-config-target="totalAssociations">-</div>
+                            <small class="text-muted">{{ 'association.config.total_associations'|trans }}</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-success" id="successfulAssociations" data-association-config-target="successfulAssociations">-</div>
+                            <small class="text-muted">{{ 'association.config.successful_associations'|trans }}</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-warning" id="rejectedLowScore" data-association-config-target="rejectedLowScore">-</div>
+                            <small class="text-muted">{{ 'association.config.rejected_low_score'|trans }}</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-danger" id="unmatchedTracks" data-association-config-target="unmatchedTracks">-</div>
+                            <small class="text-muted">{{ 'association.config.unmatched_tracks'|trans }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>{{ 'association.config.association_rate'|trans }}</strong>
+                            <small class="text-muted" id="lastUpdated" data-association-config-target="lastUpdated">-</small>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%" 
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+                                 data-association-config-target="progressBar">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Plugin Hook: Configuration Sections -->
+        {% hook 'configuration.sections' %}
+    </div>
+</div>
+
+<style>
+.bg-orange {
+    background-color: var(--warning-color) !important;
+}
+</style>
+{% endblock %}

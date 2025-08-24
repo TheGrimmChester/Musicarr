@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'system.title'|trans }} - {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="row" data-controller="system">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-cogs me-2"></i>{{ 'system.title'|trans }}</h1>
+            <button class="btn btn-outline-primary" id="refreshStatus" data-action="click->system#refreshStatus">
+                <i class="fas fa-sync-alt me-1"></i>{{ 'system.refresh'|trans }}
+            </button>
+        </div>
+
+        {% if not supervisord_available|default(true) %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>{{ 'system.supervisord_unavailable'|trans }}</strong><br>
+                {{ 'system.supervisord_unavailable_desc'|trans }}
+            </div>
+        {% elseif programs is empty %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ 'system.no_programs'|trans }}
+            </div>
+        {% else %}
+            <!-- Program Groups View -->
+            <div class="row">
+                {% for group in grouped_programs %}
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-{{ group.is_group ? 'layer-group' : 'cog' }} me-2"></i>
+                                    {{ group.base_name }}
+                                    {% if group.is_group %}
+                                        <span class="badge bg-secondary ms-2">
+                                            {{ group.running_processes }}/{{ group.total_processes }} {{ 'system.running'|trans }}
+                                        </span>
+                                    {% endif %}
+                                </h5>
+                                {% if group.is_group %}
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-success group-action"
+                                                data-group="{{ group.base_name }}"
+                                                data-action="start"
+                                                data-system-target="groupAction"
+                                                title="{{ 'system.start_all'|trans }}">
+                                            <i class="fas fa-play me-1"></i>{{ 'system.start_all'|trans }}
+                                        </button>
+                                        <button class="btn btn-sm btn-warning group-action"
+                                                data-group="{{ group.base_name }}"
+                                                data-action="stop"
+                                                data-system-target="groupAction"
+                                                title="{{ 'system.stop_all'|trans }}">
+                                            <i class="fas fa-stop me-1"></i>{{ 'system.stop_all'|trans }}
+                                        </button>
+                                        <button class="btn btn-sm btn-info group-action"
+                                                data-group="{{ group.base_name }}"
+                                                data-action="restart"
+                                                data-system-target="groupAction"
+                                                title="{{ 'system.restart_all'|trans }}">
+                                            <i class="fas fa-redo me-1"></i>{{ 'system.restart_all'|trans }}
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>{{ 'system.process_name'|trans }}</th>
+                                                <th>{{ 'system.status'|trans }}</th>
+                                                <th>{{ 'system.pid'|trans }}</th>
+                                                <th>{{ 'system.info'|trans }}</th>
+                                                <th class="text-center">{{ 'system.actions'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for process in group.processes %}
+                                                <tr data-program="{{ process.name }}">
+                                                    <td>
+                                                        <code class="text-muted">{{ process.name }}</code>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-{{ process.is_running ? 'success' : 'danger' }}">
+                                                            <i class="fas fa-{{ process.is_running ? 'play' : 'stop' }} me-1"></i>
+                                                            {{ process.status }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {{ process.pid ?: '-' }}
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted">{{ process.info ?: '-' }}</small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group" role="group">
+                                                            {% if process.is_running %}
+                                                                <button class="btn btn-sm btn-warning program-action"
+                                                                        data-program="{{ process.name }}"
+                                                                        data-action="stop"
+                                                                        data-system-target="programAction"
+                                                                        title="{{ 'system.stop'|trans }}">
+                                                                    <i class="fas fa-stop me-1"></i>{{ 'system.stop'|trans }}
+                                                                </button>
+                                                                <button class="btn btn-sm btn-info program-action"
+                                                                        data-program="{{ process.name }}"
+                                                                        data-action="restart"
+                                                                        data-system-target="programAction"
+                                                                        title="{{ 'system.restart'|trans }}">
+                                                                    <i class="fas fa-redo me-1"></i>{{ 'system.restart'|trans }}
+                                                                </button>
+                                                            {% else %}
+                                                                <button class="btn btn-sm btn-success program-action"
+                                                                        data-program="{{ process.name }}"
+                                                                        data-action="start"
+                                                                        data-system-target="programAction"
+                                                                        title="{{ 'system.start'|trans }}">
+                                                                    <i class="fas fa-play me-1"></i>{{ 'system.start'|trans }}
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-system-target="loadingModal">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">{{ 'system.processing'|trans|default('Processing...') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass translations to controller -->
+<div data-system-translations-value="{{ {
+    'confirm_start_group': 'system.confirm_start_group'|trans|default('Are you sure you want to start all processes in group'),
+    'confirm_stop_group': 'system.confirm_stop_group'|trans|default('Are you sure you want to stop all processes in group'),
+    'confirm_restart_group': 'system.confirm_restart_group'|trans|default('Are you sure you want to restart all processes in group')
+}|json_encode|raw }}" style="display: none;">
+</div>
+{% endblock %}

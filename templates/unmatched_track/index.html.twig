@@ -1,0 +1,252 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'unmatched_track.title'|trans }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home')},
+    {'text': 'unmatched_track.title'|trans, 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="row" data-controller="unmatched-track">
+    <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-exclamation-triangle text-warning"></i> {{ 'unmatched_track.title'|trans }}</h1>
+                {% if enabledLibrariesCount > 0 %}
+                <div>
+                    <button id="autoAssociateBtn" class="btn btn-warning me-2" data-action="click->unmatched-track#startAutoAssociation">
+                        <i class="fas fa-magic me-1"></i>{{ 'unmatched_track.auto_associate'|trans }}
+                    </button>
+                    <a href="{{ path('app_scan_libraries') }}" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> {{ 'unmatched_track.scan_libraries'|trans }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Statistiques -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3>{{ stats.total }}</h3>
+                                <p>{{ 'unmatched_track.total'|trans }}</p>
+                            </div>
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                {% for library in libraries %}
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3>{{ stats.byLibrary[library.name] ?? 0 }}</h3>
+                                <p>{{ library.name }}</p>
+                            </div>
+                            <i class="fas fa-database fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Filtres -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ 'unmatched_track.filters'|trans }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3" data-action="submit->unmatched-track#handleFilterSubmit">
+                        <div class="col-md-2">
+                            <label for="library" class="form-label">{{ 'unmatched_track.library'|trans }}</label>
+                            <select name="library" id="library" class="form-select" data-action="change->unmatched-track#handleLibraryChange">
+                                <option value="">{{ 'unmatched_track.all_libraries'|trans }}</option>
+                                {% for library in libraries %}
+                                <option value="{{ library.id }}" {% if selected_library == library.id %}selected{% endif %}>
+                                    {{ library.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="artist" class="form-label">{{ 'unmatched_track.artist'|trans }}</label>
+                            <input type="text" name="artist" id="artist" class="form-control"
+                                   value="{{ search_artist }}" placeholder="{{ 'unmatched_track.search_by_artist'|trans }}"
+                                   data-action="input->unmatched-track#handleFilterChange">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="album" class="form-label">{{ 'unmatched_track.album'|trans }}</label>
+                            <input type="text" name="album" id="album" class="form-control"
+                                   value="{{ search_album }}" placeholder="{{ 'unmatched_track.search_by_album'|trans }}"
+                                   data-action="input->unmatched-track#handleFilterChange">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="title" class="form-label">{{ 'unmatched_track.title_label'|trans }}</label>
+                            <input type="text" name="title" id="title" class="form-control"
+                                   value="{{ search_title }}" placeholder="{{ 'unmatched_track.search_by_title'|trans }}"
+                                   data-action="input->unmatched-track#handleFilterChange">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> {{ 'unmatched_track.filter'|trans }}
+                                </button>
+                                <a href="{{ path('unmatched_tracks_index') }}" class="btn btn-secondary" data-action="click->unmatched-track#clearFilters">
+                                    <i class="fas fa-times"></i> {{ 'unmatched_track.clear'|trans }}
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Liste des pistes -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ 'unmatched_track.list_title'|trans }} (<span id="loadedCount" data-unmatched-track-target="loadedCount">{{ stats.loaded }}</span> / {{ stats.total }})</h5>
+                    <div>
+                        <button id="selectAll" class="btn btn-sm btn-outline-primary" data-action="click->unmatched-track#selectAll">{{ 'unmatched_track.select_all'|trans }}</button>
+                        {% if enabledLibrariesCount > 0 %}
+                        <button id="bulkAutoAssociate" class="btn btn-sm btn-warning hidden" data-action="click->unmatched-track#bulkAutoAssociate">
+                            <i class="fas fa-magic"></i> {{ 'unmatched_track.auto_associate_selection'|trans }}
+                        </button>
+                        {% endif %}
+                        <button id="bulkDelete" class="btn btn-sm btn-danger hidden" data-action="click->unmatched-track#bulkDelete">
+                            <i class="fas fa-trash"></i> {{ 'unmatched_track.delete_selection'|trans }}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if stats.total == 0 %}
+                    <div class="text-center py-5" id="emptyState" data-unmatched-track-target="emptyState">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h4>{{ 'unmatched_track.no_tracks_found'|trans }}</h4>
+                        <p class="text-muted">{{ 'unmatched_track.all_tracks_associated'|trans }}</p>
+                    </div>
+                    {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="unmatchedTracksTable">
+                            <thead>
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAllCheckbox" data-action="change->unmatched-track#toggleAllTasks" data-unmatched-track-target="selectAllCheckbox">
+                                    </th>
+                                    <th>{{ 'unmatched_track.file'|trans }}</th>
+                                    <th>{{ 'unmatched_track.track_number'|trans }}</th>
+                                    <th>{{ 'unmatched_track.artist'|trans }}</th>
+                                    <th>{{ 'stats.albums'|trans }}</th>
+                                    <th>{{ 'unmatched_track.title_label'|trans }}</th>
+                                    <th>{{ 'unmatched_track.year'|trans }}</th>
+                                    <th>{{ 'unmatched_track.duration'|trans }}</th>
+                                    <th>{{ 'nav.libraries'|trans }}</th>
+                                    <th>{{ 'unmatched_track.actions'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unmatchedTracksTableBody" data-unmatched-track-target="tableBody">
+                                <!-- Tracks will be loaded dynamically via JavaScript -->
+                            </tbody>
+                        </table>
+
+                                <!-- Loading indicator -->
+        <div id="loadingIndicator" class="text-center py-4 hidden" data-unmatched-track-target="loadingIndicator">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">{{ 'unmatched_track.loading_more'|trans|default('Loading more tracks...') }}</p>
+                        </div>
+
+                                <!-- End of data indicator -->
+        <div id="endOfDataIndicator" class="text-center py-4 text-muted hidden" data-unmatched-track-target="endOfDataIndicator">
+                            <i class="fas fa-check-circle"></i>
+                            <p class="mt-2">{{ 'unmatched_track.all_loaded'|trans|default('All tracks loaded') }}</p>
+                        </div>
+
+                                <!-- Infinite scroll trigger -->
+        <div id="infiniteScrollTrigger" class="infinite-scroll-trigger" data-unmatched-track-target="infiniteScrollTrigger"></div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Loading and scroll elements (always present for JavaScript) -->
+                    {% if stats.total == 0 %}
+                    <div id="loadingIndicator" class="text-center py-4 hidden" data-unmatched-track-target="loadingIndicator">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">{{ 'unmatched_track.loading_more'|trans|default('Loading more tracks...') }}</p>
+                    </div>
+
+                    <div id="endOfDataIndicator" class="text-center py-4 text-muted hidden" data-unmatched-track-target="endOfDataIndicator">
+                        <i class="fas fa-check-circle"></i>
+                        <p class="mt-2">{{ 'unmatched_track.all_loaded'|trans|default('All tracks loaded') }}</p>
+                    </div>
+
+                    <div id="infiniteScrollTrigger" class="infinite-scroll-trigger hidden" data-unmatched-track-target="infiniteScrollTrigger"></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal pour suggérer des artistes (pour compatibilité) -->
+<div class="modal fade" id="suggestArtistsModal" tabindex="-1">
+    <div class="modal-dialog modal-full">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'unmatched_track.suggest_artists'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="suggestionsContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">{{ 'unmatched_track.loading'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour les meilleures correspondances -->
+<div class="modal fade" id="bestMatchesModal" tabindex="-1" data-controller="best-matches-modal">
+    <div class="modal-dialog modal-full">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'unmatched_track.best_matches'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="matchesContainer" data-best-matches-modal-target="matchesContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">{{ 'unmatched_track.loading'|trans }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass data from Twig to JavaScript -->
+<div data-unmatched-track-stats-total-value="{{ stats.total }}"
+     data-unmatched-track-stats-loaded-value="{{ stats.loaded }}"
+     data-unmatched-track-stats-has-more-value="{{ stats.hasMore ? 'true' : 'false' }}"
+     data-unmatched-track-filters-library-value="{{ selected_library|default('') }}"
+     data-unmatched-track-filters-artist-value="{{ search_artist|default('') }}"
+     data-unmatched-track-filters-title-value="{{ search_title|default('') }}"
+     data-unmatched-track-filters-album-value="{{ search_album|default('') }}"
+     style="display: none;">
+</div>
+{% endblock %}

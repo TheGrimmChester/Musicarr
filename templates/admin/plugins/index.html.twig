@@ -1,0 +1,668 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Plugin Management{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>Plugin Management</h1>
+    
+    <!-- Remote Plugin Discovery Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Remote Plugin Discovery</h5>
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshRemotePlugins()">
+                        <i class="fas fa-sync-alt"></i> Refresh Remote Plugins
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Discover and download plugins from the remote repository. Plugins are automatically refreshed every hour.
+                    </p>
+                    <div id="remotePluginsStatus" class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Remote plugin discovery is enabled. Plugins will be loaded from the remote repository.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remote Plugin Installation Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Download Plugin from Repository</h5>
+                </div>
+                <div class="card-body">
+                    <form id="remotePluginInstallForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="repositoryUrl" class="form-label">Repository URL</label>
+                                    <input type="url" class="form-control" id="repositoryUrl" name="repository_url" 
+                                           placeholder="https://github.com/user/repo or git@github.com:user/repo.git" required>
+                                    <div class="form-text">HTTPS or SSH URL for the public plugin repository</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="pluginName" class="form-label">Plugin Name</label>
+                                    <input type="text" class="form-control" id="pluginName" name="plugin_name" 
+                                           placeholder="my-plugin" required>
+                                    <div class="form-text">Directory name for the plugin</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="branch" class="form-label">Branch</label>
+                                    <input type="text" class="form-control" id="branch" name="branch" 
+                                           placeholder="main" value="main">
+                                    <div class="form-text">Branch to checkout (default: main)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success" id="installRemotePluginBtn">
+                                    <i class="fas fa-download"></i> Download Plugin
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plugin Categories -->
+    {% set categories = pluginInfoService.getPluginCategories() %}
+    {% if categories is not empty %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Plugin Categories</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for tag, count in categories %}
+                            <span class="badge bg-secondary">{{ tag }} ({{ count }})</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="pluginSearch" placeholder="Search plugins...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="searchPlugins()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="pluginFilter">
+                                <option value="">All Plugins</option>
+                                <option value="local">Local Plugins Only</option>
+                                <option value="remote">Remote Plugins Only</option>
+                                <option value="installed">Installed Plugins</option>
+                                <option value="not_installed">Not Installed</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Available Plugins -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Available Plugins</h5>
+                </div>
+                <div class="card-body">
+                    {% if plugins is empty %}
+                        <p class="text-muted">No plugins found.</p>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="pluginsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Plugin</th>
+                                        <th title="For remote plugins: shows current branch/tag with change option">Version/Reference</th>
+                                        <th>Author</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pluginName, plugin in plugins %}
+                                        <tr data-plugin-type="{{ plugin.isRemote ? 'remote' : 'local' }}" 
+                                            data-plugin-installed="{{ plugin.installed ? 'true' : 'false' }}">
+                                            <td>
+                                                <strong>{{ plugin.name }}</strong>
+                                                {% if plugin.isRemote %}
+                                                    <i class="fas fa-cloud text-info ms-1" title="Remote Plugin"></i>
+                                                {% else %}
+                                                    <i class="fas fa-hdd text-success ms-1" title="Local Plugin"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if plugin.isRemote and plugin.installed %}
+                                                    <!-- For installed remote plugins, show current reference with change option -->
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge bg-secondary me-2" id="current-ref-{{ pluginName }}">
+                                                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                                                        </span>
+                                                        <button class="btn btn-outline-primary btn-sm" onclick="showReferenceChangeModal('{{ pluginName }}')" 
+                                                                title="Change branch/tag/release">
+                                                            <i class="fas fa-code-branch"></i>
+                                                        </button>
+                                                    </div>
+                                                    <small class="text-muted d-block mt-1">
+                                                        <i class="fas fa-tag"></i> {{ plugin.version }}
+                                                        <span class="text-info">(click branch icon to change)</span>
+                                                    </small>
+                                                {% else %}
+                                                    <!-- For local plugins or uninstalled remote plugins, show version normally -->
+                                                    <span class="badge bg-secondary">{{ plugin.version }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ plugin.author ?? 'Unknown' }}</td>
+                                            <td>
+                                                {{ plugin.description ?? 'No description available' }}
+                                                {% if plugin.tags is not empty %}
+                                                    <br><small class="text-muted">
+                                                        {% for tag in plugin.tags %}
+                                                            <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                                        {% endfor %}
+                                                    </small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if plugin.installed %}
+                                                    {% if plugin.enabled %}
+                                                        <span class="badge bg-success">Installed & Enabled</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Installed & Disabled</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Not Installed</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if plugin.isRemote %}
+                                                    <span class="badge bg-info">Remote</span>
+                                                    {% if plugin.repository_url %}
+                                                        <br><a href="{{ plugin.repository_url }}" target="_blank" class="text-decoration-none">
+                                                            <small><i class="fas fa-external-link-alt"></i> Repository</small>
+                                                        </a>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-success">Local</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    {% if not plugin.installed %}
+                                                        {% if plugin.isRemote %}
+                                                            <button class="btn btn-success btn-sm" onclick="installPlugin('{{ pluginName }}')">
+                                                                <i class="fas fa-download"></i> Download
+                                                            </button>
+                                                        {% else %}
+                                                            <button class="btn btn-success btn-sm" onclick="installPlugin('{{ pluginName }}')">
+                                                                <i class="fas fa-play"></i> Enable
+                                                            </button>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {% if plugin.enabled %}
+                                                            <button class="btn btn-warning btn-sm" onclick="disablePlugin('{{ pluginName }}')">
+                                                                <i class="fas fa-pause"></i> Disable
+                                                            </button>
+                                                        {% else %}
+                                                            <button class="btn btn-info btn-sm" onclick="enablePlugin('{{ pluginName }}')">
+                                                                <i class="fas fa-play"></i> Enable
+                                                            </button>
+                                                        {% endif %}
+                                                        <button class="btn btn-danger btn-sm" onclick="uninstallPlugin('{{ pluginName }}')">
+                                                            <i class="fas fa-trash"></i> Uninstall
+                                                        </button>
+                                                    {% endif %}
+                                                    {% if plugin.installed %}
+                                                        <button class="btn btn-primary btn-sm" onclick="upgradePlugin('{{ pluginName }}')">
+                                                            <i class="fas fa-arrow-up"></i> Upgrade
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Status Modal -->
+<div class="modal fade" id="taskStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Task Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="taskStatusContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reference Change Modal -->
+<div class="modal fade" id="referenceChangeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Plugin Reference</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Available Branches</h6>
+                        <div id="availableBranches" class="mb-3">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Available Tags</h6>
+                        <div id="availableTags" class="mb-3">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Change Reference</h6>
+                        <form id="referenceChangeForm">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="referenceType" class="form-label">Reference Type</label>
+                                        <select class="form-select" id="referenceType" name="reference_type" required>
+                                            <option value="branch">Branch</option>
+                                            <option value="tag">Tag</option>
+                                            <option value="commit">Commit Hash</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="referenceValue" class="form-label">Reference Value</label>
+                                        <input type="text" class="form-control" id="referenceValue" name="reference" 
+                                               placeholder="Enter branch name, tag, or commit hash" required>
+                                        <div class="form-text">Enter the specific branch, tag, or commit hash you want to checkout</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary" id="changeReferenceBtn">
+                                    <i class="fas fa-code-branch"></i> Change Reference
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search and filter functionality
+function searchPlugins() {
+    const searchTerm = document.getElementById('pluginSearch').value.toLowerCase();
+    const filterValue = document.getElementById('pluginFilter').value;
+    const rows = document.querySelectorAll('#pluginsTable tbody tr');
+    
+    rows.forEach(row => {
+        const pluginName = row.querySelector('td:first-child strong').textContent.toLowerCase();
+        const pluginDescription = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+        const pluginAuthor = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        const pluginType = row.dataset.pluginType;
+        const pluginInstalled = row.dataset.pluginInstalled;
+        
+        let showRow = true;
+        
+        // Search filter
+        if (searchTerm && !pluginName.includes(searchTerm) && !pluginDescription.includes(searchTerm) && !pluginAuthor.includes(searchTerm)) {
+            showRow = false;
+        }
+        
+        // Type filter
+        if (filterValue === 'local' && pluginType !== 'local') {
+            showRow = false;
+        } else if (filterValue === 'remote' && pluginType !== 'remote') {
+            showRow = false;
+        }
+        
+        // Installation filter
+        if (filterValue === 'installed' && pluginInstalled !== 'true') {
+            showRow = false;
+        } else if (filterValue === 'not_installed' && pluginInstalled !== 'false') {
+            showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
+// Filter change handler
+document.getElementById('pluginFilter').addEventListener('change', searchPlugins);
+document.getElementById('pluginSearch').addEventListener('input', searchPlugins);
+
+// Refresh remote plugins
+function refreshRemotePlugins() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    button.disabled = true;
+    
+    // Reload the page to refresh remote plugins
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+// Remote plugin installation
+document.getElementById('remotePluginInstallForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        repository_url: formData.get('repository_url'),
+        plugin_name: formData.get('plugin_name'),
+        branch: formData.get('branch') || 'main'
+    };
+    
+    installRemotePlugin(data);
+});
+
+function installRemotePlugin(data) {
+    const button = document.getElementById('installRemotePluginBtn');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+    button.disabled = true;
+    
+    fetch('/admin/plugins/remote/install', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showTaskStatus(result.message, result.taskId);
+            // Reset form
+            document.getElementById('remotePluginInstallForm').reset();
+            // Refresh the page after a delay to show the new plugin
+            setTimeout(() => location.reload(), 3000);
+        } else {
+            alert('Error: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while downloading the plugin.');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function installPlugin(pluginName) {
+    if (confirm(`Are you sure you want to install the plugin "${pluginName}"?`)) {
+        performPluginAction('install', pluginName);
+    }
+}
+
+function uninstallPlugin(pluginName) {
+    if (confirm(`Are you sure you want to uninstall the plugin "${pluginName}"? This action cannot be undone.`)) {
+        performPluginAction('uninstall', pluginName);
+    }
+}
+
+function enablePlugin(pluginName) {
+    performPluginAction('enable', pluginName);
+}
+
+function disablePlugin(pluginName) {
+    if (confirm(`Are you sure you want to disable the plugin "${pluginName}"?`)) {
+        performPluginAction('disable', pluginName);
+    }
+}
+
+function upgradePlugin(pluginName) {
+    const targetVersion = prompt(`Enter target version for ${pluginName} (leave empty for latest):`);
+    performPluginAction('upgrade', pluginName, { target_version: targetVersion });
+}
+
+function performPluginAction(action, pluginName, additionalData = {}) {
+    const url = `/admin/plugins/${pluginName}/${action}`;
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(additionalData)
+    };
+
+    fetch(url, options)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showTaskStatus(data.message, data.taskId);
+                // Refresh the page after a short delay to show updated status
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while performing the action.');
+        });
+}
+
+function showTaskStatus(message, taskId) {
+    document.getElementById('taskStatusContent').innerHTML = `
+        <div class="alert alert-success">
+            <strong>Success!</strong> ${message}
+        </div>
+        <p><strong>Task ID:</strong> ${taskId}</p>
+        <p class="text-muted">The task has been queued and will be processed in the background. You can monitor its progress in the Tasks section.</p>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('taskStatusModal'));
+    modal.show();
+}
+
+// Reference change functionality
+let currentPluginName = null;
+
+function showReferenceChangeModal(pluginName) {
+    currentPluginName = pluginName;
+    const modal = new bootstrap.Modal(document.getElementById('referenceChangeModal'));
+    modal.show();
+    
+    // Load available branches and tags
+    loadAvailableReferences(pluginName);
+}
+
+function loadAvailableReferences(pluginName) {
+    // Load branches
+    fetch(`/admin/plugins/${pluginName}/branches`)
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                displayAvailableBranches(result.branches);
+                displayAvailableTags(result.branches.tags);
+                updateCurrentReference(pluginName, result.branches.current);
+            } else {
+                console.error('Failed to load references:', result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading references:', error);
+        });
+}
+
+function displayAvailableBranches(branches) {
+    const container = document.getElementById('availableBranches');
+    if (branches.local && branches.local.length > 0) {
+        container.innerHTML = `
+            <div class="mb-2">
+                <strong>Local:</strong>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                    ${branches.local.map(branch => `<span class="badge bg-primary">${branch}</span>`).join('')}
+                </div>
+            </div>
+        `;
+        if (branches.remote && branches.remote.length > 0) {
+            container.innerHTML += `
+                <div class="mb-2">
+                    <strong>Remote:</strong>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        ${branches.remote.map(branch => `<span class="badge bg-secondary">${branch}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        container.innerHTML = '<p class="text-muted">No branches available</p>';
+    }
+}
+
+function displayAvailableTags(tags) {
+    const container = document.getElementById('availableTags');
+    if (tags && tags.length > 0) {
+        container.innerHTML = `
+            <div class="d-flex flex-wrap gap-1">
+                ${tags.map(tag => `<span class="badge bg-info">${tag}</span>`).join('')}
+            </div>
+        `;
+    } else {
+        container.innerHTML = '<p class="text-muted">No tags available</p>';
+    }
+}
+
+function updateCurrentReference(pluginName, currentRef) {
+    const element = document.getElementById(`current-ref-${pluginName}`);
+    if (element && currentRef) {
+        element.innerHTML = `<i class="fas fa-code-branch"></i> ${currentRef}`;
+        element.className = 'badge bg-success';
+    }
+}
+
+// Reference change form submission
+document.getElementById('referenceChangeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!currentPluginName) {
+        alert('No plugin selected');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const data = {
+        reference: formData.get('reference'),
+        reference_type: formData.get('reference_type')
+    };
+    
+    changePluginReference(currentPluginName, data);
+});
+
+function changePluginReference(pluginName, data) {
+    const button = document.getElementById('changeReferenceBtn');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
+    button.disabled = true;
+    
+    fetch(`/admin/plugins/${pluginName}/change-reference`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showTaskStatus(result.message, result.task_id);
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('referenceChangeModal'));
+            modal.hide();
+            // Reset form
+            document.getElementById('referenceChangeForm').reset();
+            // Refresh the page after a delay to show updated reference
+            setTimeout(() => location.reload(), 3000);
+        } else {
+            alert('Error: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while changing the reference.');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Load current references for installed remote plugins on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const remotePluginRows = document.querySelectorAll('tr[data-plugin-type="remote"][data-plugin-installed="true"]');
+    remotePluginRows.forEach(row => {
+        const pluginName = row.querySelector('td:first-child strong').textContent;
+        loadAvailableReferences(pluginName);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,700 @@
+{% extends 'base.html.twig' %}
+{% import 'partials/_placeholders.html.twig' as placeholders %}
+
+{% block title %}{{ artist.name }} - {{ 'app.title'|trans }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': 'nav.artists'|trans, 'url': path('artist_index'), 'icon': 'fas fa-users'},
+    {'text': artist.name, 'url': null, 'active': true, 'icon': 'fas fa-user'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container mt-4"
+     data-controller="artist-show album-management release-wizard"
+     data-artist-show-artist-id-value="{{ artist.id }}"
+     data-artist-show-artist-mbid-value="{{ artist.mbid }}"
+     data-artist-show-artist-name-value="{{ artist.name }}"
+     data-artist-show-status-filter-value="{{ statusFilter|default('') }}"
+     data-album-management-album-id-value="0"
+     data-album-management-album-title-value=""
+     data-album-management-artist-id-value="{{ artist.id }}"
+     data-album-management-artist-name-value="{{ artist.name|e('html_attr') }}"
+     data-album-management-tracks-value="[]"
+     data-release-wizard-artist-id-value="{{ artist.id }}"
+     data-release-wizard-artist-mbid-value="{{ artist.mbid }}"
+     data-release-wizard-artist-name-value="{{ artist.name }}"
+     data-release-wizard-artist-type-value="{{ artist.type|default('') }}"
+     data-release-wizard-artist-country-value="{{ artist.country|default('') }}">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center">
+                    <div class="me-4">
+                        {% if artist.hasArtistImage %}
+                            <img src="{{ artist.artistImageUrl }}" alt="{{ artist.name }}" class="rounded-circle shadow artist-profile-image">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-light shadow artist-profile-placeholder">
+                                <i class="fas fa-user text-muted placeholder-icon"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h1>{{ artist.name }}</h1>
+                        <p class="text-muted mb-0">
+                            {% if artist.country %}
+                                <i class="fas fa-flag me-1"></i>{{ artist.country }}
+                            {% endif %}
+                            {% if artist.type %}
+                                <i class="fas fa-tag me-1"></i>{{ artist.type }}
+                            {% endif %}
+                            <span class="badge bg-{{ artist.status == 'active' ? 'success' : 'secondary' }} ms-2">
+                                {{ artist.status }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-primary me-2"
+                            data-action="click->artist-show#syncArtist"
+                            data-artist-id="{{ artist.id }}">
+                        <i class="fas fa-sync me-1"></i>{{ 'artist.sync'|trans }}
+                    </button>
+                    <button class="btn btn-outline-info me-2"
+                            data-action="click->artist-show#refreshArtistImage"
+                            data-artist-id="{{ artist.id }}">
+                        <i class="fas fa-image me-1"></i>{{ 'artist.refresh_image'|trans|default('Refresh Image') }}
+                    </button>
+                    {% if artist.mbid %}
+                    <button class="btn btn-outline-success me-2"
+                            data-action="click->release-wizard#openAddReleaseModal">
+                        <i class="fas fa-plus me-1"></i>{{ 'artist.add_release'|trans|default('Add Release') }}
+                    </button>
+                    {% else %}
+                    <button class="btn btn-outline-secondary me-2" disabled
+                            title="{{ 'artist.no_mbid_for_release_search'|trans|default('Artist must have MusicBrainz ID to search for releases') }}">
+                        <i class="fas fa-plus me-1"></i>{{ 'artist.add_release'|trans|default('Add Release') }}
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-outline-danger me-2"
+                            data-action="click->artist-show#deleteArtist"
+                            data-artist-id="{{ artist.id }}"
+                            data-artist-name="{{ artist.name|e('html_attr') }}">
+                        <i class="fas fa-trash me-1"></i>{{ 'button.delete'|trans }}
+                    </button>
+                   {% if artist.mbid %}
+                   <button class="btn btn-outline-warning me-2"
+                           data-action="click->artist-show#clearArtistCache"
+                           data-artist-mbid="{{ artist.mbid }}"
+                           data-artist-name="{{ artist.name|e('html_attr') }}">
+                       <i class="fas fa-broom me-1"></i>Clear Cache
+                   </button>
+                   {% endif %}
+                </div>
+            </div>
+
+            <!-- Informations de l'artiste -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>{{ 'album.information'|trans }}
+                        </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>{{ 'artist.name'|trans }}:</strong> {{ artist.name }}<br>
+                                    <strong>{{ 'artist.mbid'|trans }}:</strong> {{ artist.mbid ?: 'status.not_available'|trans }}<br>
+                                    <strong>{{ 'artist.country'|trans }}:</strong> {{ artist.country ?: 'status.not_available'|trans }}<br>
+                                    <strong>{{ 'artist.type'|trans }}:</strong> {{ artist.type ?: 'status.not_available'|trans }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>{{ 'artist.status'|trans }}:</strong>
+                                    <span class="badge bg-{{ artist.status == 'active' ? 'success' : 'secondary' }}">
+                                        {{ artist.status }}
+                                    </span><br>
+                                    <strong>{{ 'artist.period'|trans }}:</strong> {{ artist.started ? artist.started|date('Y') : 'status.not_available'|trans }}<br>
+                                    <strong>{{ 'artist.period'|trans }}:</strong> {{ artist.ended ? artist.ended|date('Y') : 'status.not_available'|trans }}<br>
+                                    <strong>{{ 'status.monitored'|trans }}:</strong>
+                                    <span class="badge bg-{{ artist.monitored ? 'success' : 'danger' }}">
+                                        {{ artist.monitored ? 'album.yes'|trans : 'album.no'|trans }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% if artist.overview %}
+                                <hr>
+                                <strong>{{ 'artist.description'|trans }}:</strong><br>
+                                <p class="text-muted">{{ artist.overview }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Folder Information Card -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-folder me-2"></i>{{ 'artist.folder_information'|trans|default('Folder Information') }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>{{ 'artist.folder_path'|trans|default('Folder Path') }}:</strong><br>
+                                {% if artist.artistFolderPath %}
+                                    <code class="text-break">{{ artist.artistFolderPath }}</code>
+                                    <div class="mt-2">
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                data-action="click->artist-show#editArtistFolder"
+                                                data-artist-id="{{ artist.id }}"
+                                                data-current-path="{{ artist.artistFolderPath|e('html_attr') }}">
+                                            <i class="fas fa-edit me-1"></i>{{ 'button.edit'|trans|default('Edit') }}
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">{{ 'status.not_available'|trans }}</span>
+                                    <div class="mt-2">
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                data-action="click->artist-show#editArtistFolder"
+                                                data-artist-id="{{ artist.id }}"
+                                                data-current-path="">
+                                            <i class="fas fa-plus me-1"></i>{{ 'button.set_folder'|trans|default('Set Folder') }}
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>{{ 'album.statistics'|trans }}
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="h3 text-primary">{{ albumsByType.Album|length + albumsByType.Single|length + albumsByType.EP|length + albumsByType.Compilation|length }}</div>
+                                    <small class="text-muted">{{ 'artist.total'|trans }}</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h3 text-success">{{ artist.lastInfoSync ? artist.lastInfoSync|date('d/m/Y') : 'Jamais' }}</div>
+                                    <small class="text-muted">{{ 'artist.last_sync'|trans }}</small>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="h4 text-info">{{ albumsByType.Album|length }}</div>
+                                    <small class="text-muted">{{ 'album.total'|trans }}</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h4 text-warning">{{ albumsByType.Single|length }}</div>
+                                    <small class="text-muted">{{ 'album.singles'|trans }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglets pour les types d'albums -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-compact-disc me-2"></i>Discographie
+                                {% if statusFilter %}
+                                    <span class="badge bg-info ms-2">
+                                        <i class="fas fa-filter me-1"></i>
+                                        {% if statusFilter == 'complete' %}
+                                            {{ 'album.complete'|trans }}
+                                        {% elseif statusFilter == 'incomplete' %}
+                                            {{ 'album.incomplete'|trans }}
+                                        {% elseif statusFilter == 'missing' %}
+                                            {{ 'album.missing'|trans }}
+                                        {% else %}
+                                            {{ statusFilter|title }}
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </h5>
+                            <div class="d-flex align-items-center">
+                                <!-- Status Filter -->
+                                <div class="me-3">
+                                    <select class="form-select form-select-sm" id="statusFilter" data-action="change->artist-show#applyStatusFilter">
+                                        <option value="">{{ 'album.filter_by_status'|trans }}</option>
+                                        {% for status in availableStatuses %}
+                                            <option value="{{ status }}" {% if statusFilter == status %}selected{% endif %}>
+                                                {% if status == 'complete' %}
+                                                    {{ 'album.complete'|trans }}
+                                                {% elseif status == 'incomplete' %}
+                                                    {{ 'album.incomplete'|trans }}
+                                                {% elseif status == 'missing' %}
+                                                    {{ 'album.missing'|trans }}
+                                                {% else %}
+                                                    {{ status|title }}
+                                                {% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- Clear Filter Button -->
+                                {% if statusFilter %}
+                                    <button class="btn btn-outline-secondary btn-sm me-3"
+                                            data-action="click->artist-show#clearStatusFilters">
+                                        <i class="fas fa-times me-1"></i>{{ 'album.clear_filter'|trans }}
+                                    </button>
+                                {% endif %}
+                                <!-- Monitor Switch -->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox"
+                                           {{ artist.monitored ? 'checked' : '' }}
+                                           data-action="change->artist-show#toggleArtistMonitor"
+                                           data-artist-id="{{ artist.id }}">
+                                    <label class="form-check-label" for="monitorSwitch">
+                                        {{ 'status.monitored'|trans }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if statusFilter %}
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-filter me-2"></i>
+                                    {{ 'album.filtered_results'|trans }}:
+                                    {% set totalFiltered = albumsByType.Album|length + albumsByType.Single|length + albumsByType.EP|length + albumsByType.Compilation|length %}
+                                    <strong>{{ totalFiltered }}</strong> {{ 'album.albums_found'|trans }}
+                                    {% if statusFilter == 'complete' %}
+                                        {{ 'album.with_status_complete'|trans }}
+                                    {% elseif statusFilter == 'incomplete' %}
+                                        {{ 'album.with_status_incomplete'|trans }}
+                                    {% elseif statusFilter == 'missing' %}
+                                        {{ 'album.with_status_missing'|trans }}
+                                    {% else %}
+                                        {{ 'album.with_status'|trans }} "{{ statusFilter }}"
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            <!-- Release Group Tabs -->
+                            <ul class="nav nav-tabs" id="albumTabs" role="tablist">
+                                {% set totalAlbums = albumsByType.Album|length + albumsByType.Single|length + albumsByType.EP|length + albumsByType.Compilation|length %}
+                                {% if totalAlbums > 0 or statusFilter %}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="release-groups-tab" data-bs-toggle="tab" data-bs-target="#release-groups" type="button" role="tab">
+                                            <i class="fas fa-layer-group me-1"></i>Release Groups ({{ albumsByReleaseGroup|length }})
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="albums-tab" data-bs-toggle="tab" data-bs-target="#albums" type="button" role="tab">
+                                            <i class="fas fa-compact-disc me-1"></i>By Type ({{ totalAlbums }})
+                                        </button>
+                                    </li>
+                                {% endif %}
+                            </ul>
+
+                            <div class="tab-content" id="albumTabsContent">
+                                <!-- Release Groups -->
+                                <div class="tab-pane fade" id="release-groups" role="tabpanel">
+                                    {% if albumsByReleaseGroup|length > 0 %}
+                                        <div class="mt-3">
+                                            {% for groupId, group in albumsByReleaseGroup %}
+                                                <div class="card mb-4">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-layer-group me-2"></i>
+                                                            {% if groupId == 'no_group' %}
+                                                                {{ 'artist.albums_without_release_group'|trans|default('Albums without Release Group') }}
+                                                            {% else %}
+                                                                {{ group.title }}
+                                                                <small class="text-muted ms-2">({{ group.type }})</small>
+                                                            {% endif %}
+                                                            <span class="badge bg-primary ms-2">{{ group.albums|length }} {{ 'artist.album_count'|trans|default('albums') }}</span>
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover">
+                                                                <thead class="table-light">
+                                                                    <tr>
+                                                                        <th class="table-col-cover">Cover</th>
+                                                                        <th>Title</th>
+                                                                        <th class="table-col-year">Year</th>
+                                                                        <th class="table-col-type">Type</th>
+                                                                        <th class="table-col-tracks">Tracks</th>
+                                                                        <th class="table-col-status">Status</th>
+                                                                        <th class="table-col-monitor">Monitor</th>
+                                                                        <th class="table-col-actions">Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for album in group.albums %}
+                                                                        <tr>
+                                                                            <td>
+                                                                                {% if album.hasCoverImage %}
+                                                                                    <img src="{{ album.coverImageUrl }}" alt="{{ album.title }}" class="img-thumbnail album-cover-thumb">
+                                                                                {% else %}
+                                                                                    <div class="bg-light d-flex align-items-center justify-content-center album-cover-placeholder">
+                                                                                        <i class="fas fa-compact-disc text-muted"></i>
+                                                                                    </div>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                <strong>{{ album.title }}</strong>
+                                                                                {% if album.secondaryTypes and album.secondaryTypes|length > 0 %}
+                                                                                    <br>
+                                                                                    <small class="text-muted">
+                                                                                        {% for secondaryType in album.secondaryTypes %}
+                                                                                            <span class="badge bg-secondary me-1">{{ secondaryType }}</span>
+                                                                                        {% endfor %}
+                                                                                    </small>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                {% if album.releaseDate %}
+                                                                                    <span class="badge bg-info">{{ album.releaseDate|date('Y') }}</span>
+                                                                                {% else %}
+                                                                                    <span class="text-muted">-</span>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                <span class="badge bg-primary">{{ album.albumType }}</span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <span class="badge bg-secondary">{{ album.tracks|length }}</span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <span class="badge bg-{{ album.status == 'complete' ? 'success' : (album.status == 'incomplete' ? 'danger' : (album.status == 'missing' ? 'warning' : 'secondary')) }}">
+                                                                                    {% if album.status == 'complete' %}
+                                                                                        {{ 'album.complete'|trans }}
+                                                                                    {% elseif album.status == 'incomplete' %}
+                                                                                        {{ 'album.incomplete'|trans }}
+                                                                                    {% elseif album.status == 'missing' %}
+                                                                                        {{ 'album.missing'|trans }}
+                                                                                    {% else %}
+                                                                                        {{ album.status|title }}
+                                                                                    {% endif %}
+                                                                                </span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div class="form-check form-switch">
+                                                                                    <input class="form-check-input" type="checkbox"
+                                                                                           {{ album.monitored ? 'checked' : '' }}
+                                                                                           data-action="change->artist-show#toggleAlbumMonitor"
+                                                                                           data-album-id="{{ album.id }}">
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                                    <a href="/album/{{ album.id }}" class="btn btn-outline-primary btn-sm" title="{{ 'artist.view_details'|trans }}">
+                                                                                        <i class="fas fa-eye"></i>
+                                                                                    </a>
+                                                                                    <button class="btn btn-outline-secondary btn-sm"
+                                                            data-action="click->album-management#loadAlbumTracks"
+                                                            data-album-id="{{ album.id }}"
+                                                            data-album-title="{{ album.title|e('html_attr') }}"
+                                                            title="{{ 'library.tracks'|trans }}">
+                                                                                        <i class="fas fa-list"></i>
+                                                                                    </button>
+
+                                                                                    <button class="btn btn-outline-danger btn-sm"
+                                                            data-action="click->artist-show#deleteAlbum"
+                                                            data-album-id="{{ album.id }}"
+                                                            data-album-title="{{ album.title }}"
+                                                            data-artist-name="{{ artist.name }}"
+                                                            title="{{ 'album.delete'|trans }}">
+                                                                                        <i class="fas fa-trash"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-compact-disc fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">
+                                                {% if statusFilter %}
+                                                    {{ 'album.no_albums_with_filter'|trans }}
+                                                {% else %}
+                                                    {{ 'album.no_albums_found'|trans }}
+                                                {% endif %}
+                                            </h5>
+                                            {% if not statusFilter %}
+                                                <p class="text-muted">{{ 'album.sync_artist_message'|trans }}</p>
+                                                <button class="btn btn-primary"
+                                                        data-action="click->artist-show#syncArtist"
+                                                        data-artist-id="{{ artist.id }}">
+                                                    <i class="fas fa-sync me-1"></i>{{ 'album.sync_artist'|trans }}
+                                                </button>
+                                            {% else %}
+                                                <p class="text-muted">{{ 'album.try_different_filter'|trans }}</p>
+                                                <button class="btn btn-outline-secondary"
+                                                        data-action="click->artist-show#clearStatusFilters">
+                                                    <i class="fas fa-times me-1"></i>{{ 'album.clear_filter'|trans }}
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Albums by Type -->
+                                <div class="tab-pane fade show active" id="albums" role="tabpanel">
+                                    {% if totalAlbums > 0 %}
+                                        <div class="mt-3">
+                                            <!-- All Albums Combined Table -->
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class="table-col-cover">Cover</th>
+                                                            <th>Title</th>
+                                                            <th class="table-col-year">Year</th>
+                                                            <th class="table-col-type">Type</th>
+                                                            <th class="table-col-tracks">Tracks</th>
+                                                            <th class="table-col-status">Status</th>
+                                                            <th class="table-col-monitor">Monitor</th>
+                                                            <th class="table-col-actions">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% set allAlbums = [] %}
+                                                        {% for album in albumsByType.Album %}
+                                                            {% set allAlbums = allAlbums|merge([album]) %}
+                                                        {% endfor %}
+                                                        {% for album in albumsByType.Single %}
+                                                            {% set allAlbums = allAlbums|merge([album]) %}
+                                                        {% endfor %}
+                                                        {% for album in albumsByType.EP %}
+                                                            {% set allAlbums = allAlbums|merge([album]) %}
+                                                        {% endfor %}
+                                                        {% for album in albumsByType.Compilation %}
+                                                            {% set allAlbums = allAlbums|merge([album]) %}
+                                                        {% endfor %}
+                                                        {% set sortedAlbums = allAlbums|sort((a, b) => (b.releaseDate ? b.releaseDate|date('Y') : '0') <=> (a.releaseDate ? a.releaseDate|date('Y') : '0')) %}
+                                                        {% for album in sortedAlbums %}
+                                                            <tr>
+                                                                <td>
+                                                                    {% if album.hasCoverImage %}
+                                                                        <img src="{{ album.coverImageUrl }}" alt="{{ album.title }}" class="img-thumbnail album-cover-thumb">
+                                                                    {% else %}
+                                                                        <div class="bg-light d-flex align-items-center justify-content-center album-cover-placeholder">
+                                                                            <i class="fas fa-compact-disc text-muted"></i>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <strong>{{ album.title }}</strong>
+                                                                    {% if album.secondaryTypes and album.secondaryTypes|length > 0 %}
+                                                                        <br>
+                                                                        <small class="text-muted">
+                                                                            {% for secondaryType in album.secondaryTypes %}
+                                                                                <span class="badge bg-secondary me-1">{{ secondaryType }}</span>
+                                                                            {% endfor %}
+                                                                        </small>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    {% if album.releaseDate %}
+                                                                        <span class="badge bg-info">{{ album.releaseDate|date('Y') }}</span>
+                                                                    {% else %}
+                                                                        <span class="text-muted">-</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <span class="badge bg-primary">{{ album.albumType }}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="badge bg-secondary">{{ album.tracks|length }}</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="badge bg-{{ album.status == 'complete' ? 'success' : (album.status == 'incomplete' ? 'danger' : (album.status == 'missing' ? 'warning' : 'secondary')) }}">
+                                                                        {% if album.status == 'complete' %}
+                                                                            {{ 'album.complete'|trans }}
+                                                                        {% elseif album.status == 'incomplete' %}
+                                                                            {{ 'album.incomplete'|trans }}
+                                                                        {% elseif album.status == 'missing' %}
+                                                                            {{ 'album.missing'|trans }}
+                                                                        {% else %}
+                                                                            {{ album.status|title }}
+                                                                        {% endif %}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="form-check form-switch">
+                                                                        <input class="form-check-input" type="checkbox"
+                                                                               {{ album.monitored ? 'checked' : '' }}
+                                                                               data-action="change->artist-show#toggleAlbumMonitor"
+                                                                               data-album-id="{{ album.id }}">
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="btn-group btn-group-sm" role="group">
+                                                                        <a href="/album/{{ album.id }}" class="btn btn-outline-primary btn-sm" title="{{ 'artist.view_details'|trans }}">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        <button class="btn btn-outline-secondary btn-sm"
+                                                            data-action="click->album-management#loadAlbumTracks"
+                                                            data-album-id="{{ album.id }}"
+                                                            data-album-title="{{ album.title|e('html_attr') }}"
+                                                            title="{{ 'library.tracks'|trans }}">
+                                                                            <i class="fas fa-list"></i>
+                                                                        </button>
+                                                                        <button class="btn btn-outline-danger btn-sm"
+                                                            data-action="click->artist-show#deleteAlbum"
+                                                            data-album-id="{{ album.id }}"
+                                                            data-album-title="{{ album.title }}"
+                                                            data-artist-name="{{ artist.name }}"
+                                                            title="{{ 'album.delete'|trans }}">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-compact-disc fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">
+                                                {% if statusFilter %}
+                                                    {{ 'album.no_albums_with_filter'|trans }}
+                                                {% else %}
+                                                    {{ 'album.no_albums_found'|trans }}
+                                                {% endif %}
+                                            </h5>
+                                            {% if not statusFilter %}
+                                                <p class="text-muted">{{ 'album.sync_artist_message'|trans }}</p>
+                                                <button class="btn btn-primary"
+                                                        data-action="click->artist-show#syncArtist"
+                                                        data-artist-id="{{ artist.id }}">
+                                                    <i class="fas fa-sync me-1"></i>{{ 'album.sync_artist'|trans }}
+                                                </button>
+                                            {% else %}
+                                                <p class="text-muted">{{ 'album.try_different_filter'|trans }}</p>
+                                                <button class="btn btn-outline-secondary"
+                                                        data-action="click->artist-show#clearStatusFilters">
+                                                    <i class="fas fa-times me-1"></i>{{ 'album.clear_filter'|trans }}
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour éditer le dossier de l'artiste -->
+    <div class="modal fade"
+         id="editFolderModal"
+         tabindex="-1"
+         data-artist-show-target="editFolderModal">
+        <div class="modal-dialog modal-full">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-folder me-2"></i>{{ 'artist.edit_folder'|trans }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editFolderForm">
+                        <input type="hidden"
+                               id="artistIdInput"
+                               value=""
+                               data-artist-show-target="artistIdInput">
+
+                        <div class="mb-3">
+                            <label for="folderPathInput" class="form-label">
+                                <strong>{{ 'artist.folder_path'|trans }}</strong>
+                            </label>
+                            <div class="input-group">
+                                <input type="text"
+                                       class="form-control"
+                                       id="folderPathInput"
+                                       placeholder="/path/to/artist/folder"
+                                       required
+                                       data-artist-show-target="folderPathInput">
+                                <button class="btn btn-outline-secondary"
+                                        type="button"
+                                        data-action="click->artist-show#browseFolderInput">
+                                    <i class="fas fa-folder-open"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ 'artist.folder_path_help'|trans }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="moveMetadataCheckbox"
+                                       checked
+                                       data-artist-show-target="moveMetadataCheckbox">
+                                <label class="form-check-label" for="moveMetadataCheckbox">
+                                    <i class="fas fa-images me-1"></i>
+                                    <strong>{{ 'artist.move_metadata'|trans }}</strong>
+                                </label>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ 'artist.move_metadata_help'|trans }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>{{ 'artist.folder_validation'|trans }}:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>{{ 'artist.folder_must_exist'|trans }}</li>
+                                <li>{{ 'artist.folder_must_contain_music'|trans }}</li>
+                                <li>{{ 'artist.folder_path_will_be_updated'|trans }}</li>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {{ 'app.cancel'|trans }}
+                    </button>
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="updateFolderBtn"
+                            data-artist-show-target="updateFolderBtn"
+                            data-action="click->artist-show#updateArtistFolder">
+                        <i class="fas fa-save me-1"></i>{{ 'app.save'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stimulus controllers handle all JavaScript functionality -->
+
+{% endblock %}
+

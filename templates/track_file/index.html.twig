@@ -1,0 +1,106 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'track_file.title'|trans }} {{ track.title }}{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'breadcrumb.home'|trans, 'url': path('home'), 'icon': 'fas fa-home'},
+    {'text': track.album.artist.name, 'url': path('artist_show', {id: track.album.artist.id}), 'icon': 'fas fa-user'},
+    {'text': track.album.title, 'url': path('album_show', {id: track.album.id}), 'icon': 'fas fa-compact-disc'},
+    {'text': track.title, 'url': null, 'active': true, 'icon': 'fas fa-music'}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs, {showIcons: true}) }}
+
+<div class="container mt-4" data-controller="track-file">
+    <div class="row">
+        <div class="col-12">
+            <h1>{{ 'track_file.title'|trans }} "{{ track.title }}"</h1>
+            <p class="text-muted">
+                {{ 'nav.artists'|trans }}: {{ track.album.artist.name }} | 
+                {{ 'stats.albums'|trans }}: {{ track.album.title }} | 
+                {{ 'stats.tracks'|trans }}: {{ track.trackNumber }}
+            </p>
+
+            {% if files|length == 0 %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> {{ 'track_file.no_files'|trans }}
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ 'track_file.status'|trans }}</th>
+                                <th>{{ 'track_file.file_path'|trans }}</th>
+                                <th>{{ 'track_file.quality'|trans }}</th>
+                                <th>{{ 'track_file.format'|trans }}</th>
+                                <th>{{ 'track_file.size'|trans }}</th>
+                                <th>{{ 'track_file.duration'|trans }}</th>
+                                <th>{{ 'track_file.lyrics'|trans|default('Lyrics') }}</th>
+                                <th>{{ 'track_file.added'|trans }}</th>
+                                <th>{{ 'track_file.actions'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <i class="fas fa-music text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ file.track.title }}</strong><br>
+                                                <small class="text-muted">{{ file.track.album.artist.name }} - {{ file.track.album.title }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code class="text-break">{{ file.filePath }}</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ file.format }}</span>
+                                        {% if file.quality %}
+                                        <span class="badge bg-secondary">{{ file.quality }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ (file.fileSize / 1024 / 1024)|round(2) }} MB</td>
+                                    <td>
+                                        {% if file.duration > 0 %}
+                                            {% set minutes = (file.duration / 60)|round(0, 'floor') %}
+                                            {% set seconds = file.duration % 60 %}
+                                            {{ '%02d:%02d'|format(minutes, seconds) }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ path('track_file_reassociate', {id: file.id}) }}" 
+                                               class="btn btn-outline-warning"
+                                               title="{{ 'track_file.reassociate'|trans }}">
+                                                <i class="fas fa-link"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger delete-file" 
+                                                    data-file-id="{{ file.id }}"
+                                                    data-action="click->track-file#deleteFile"
+                                                    title="{{ 'track_file.delete'|trans }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+{% endblock %} 

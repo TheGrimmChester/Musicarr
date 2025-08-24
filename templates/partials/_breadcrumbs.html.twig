@@ -1,0 +1,102 @@
+{% macro render_breadcrumbs(items, options = {}) %}
+    {% set showIcons = options.showIcons is defined ? options.showIcons : true %}
+    {% set collapsible = options.collapsible is defined ? options.collapsible : false %}
+    {% set maxVisible = options.maxVisible is defined ? options.maxVisible : 5 %}
+    
+    <nav aria-label="breadcrumb" 
+         class="enhanced-breadcrumb" 
+         data-controller="breadcrumb"
+         data-breadcrumb-animated-value="true"
+         data-breadcrumb-mobile-optimized-value="true">
+        <div class="breadcrumb-container" data-breadcrumb-target="container">
+            {% if collapsible and items|length > maxVisible %}
+                <div class="breadcrumb-collapsible">
+                    <button class="btn btn-sm btn-outline-secondary breadcrumb-toggle" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#breadcrumb-collapse-{{ random() }}" 
+                            aria-expanded="false" 
+                            aria-controls="breadcrumb-collapse"
+                            data-breadcrumb-target="toggle">
+                        <i class="fas fa-ellipsis-h"></i>
+                        <span class="ms-1">{{ items|length - 2 }} more</span>
+                    </button>
+                    
+                    <div class="collapse" id="breadcrumb-collapse-{{ random() }}" data-breadcrumb-target="collapsed">
+                        <ol class="breadcrumb breadcrumb-collapsed">
+                            {% for item in items %}
+                                {% set isActive = item.active is defined ? item.active : false %}
+                                {% set hasUrl = item.url is defined and item.url is not null %}
+                                {% set icon = item.icon is defined ? item.icon : null %}
+                                
+                                <li class="breadcrumb-item{% if isActive %} active{% endif %}" 
+                                    {% if isActive %}aria-current="page"{% endif %}>
+                                    {% if isActive %}
+                                        <span class="breadcrumb-text">
+                                            {% if showIcons and icon %}
+                                                <i class="{{ icon }} me-1"></i>
+                                            {% endif %}
+                                            {{ item.text }}
+                                        </span>
+                                    {% else %}
+                                        {% if hasUrl %}
+                                            <a href="{{ item.url }}" class="breadcrumb-link">
+                                                {% if showIcons and icon %}
+                                                    <i class="{{ icon }} me-1"></i>
+                                                {% endif %}
+                                                <span class="breadcrumb-text">{{ item.text }}</span>
+                                            </a>
+                                        {% else %}
+                                            <span class="breadcrumb-text">
+                                                {% if showIcons and icon %}
+                                                    <i class="{{ icon }} me-1"></i>
+                                                {% endif %}
+                                                {{ item.text }}
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <ol class="breadcrumb breadcrumb-main">
+                {% for item in items %}
+                    {% set isActive = item.active is defined ? item.active : false %}
+                    {% set hasUrl = item.url is defined and item.url is not null %}
+                    {% set icon = item.icon is defined ? item.icon : null %}
+                    
+                    <li class="breadcrumb-item{% if isActive %} active{% endif %}" 
+                        {% if isActive %}aria-current="page"{% endif %}>
+                        {% if isActive %}
+                            <span class="breadcrumb-text">
+                                {% if showIcons and icon %}
+                                    <i class="{{ icon }} me-1"></i>
+                                {% endif %}
+                                {{ item.text }}
+                            </span>
+                        {% else %}
+                            {% if hasUrl %}
+                                <a href="{{ item.url }}" class="breadcrumb-link">
+                                    {% if showIcons and icon %}
+                                        <i class="{{ icon }} me-1"></i>
+                                    {% endif %}
+                                    <span class="breadcrumb-text">{{ item.text }}</span>
+                                </a>
+                            {% else %}
+                                <span class="breadcrumb-text">
+                                    {% if showIcons and icon %}
+                                        <i class="{{ icon }} me-1"></i>
+                                    {% endif %}
+                                    {{ item.text }}
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </div>
+    </nav>
+{% endmacro %} 

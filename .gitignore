@@ -1,0 +1,104 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+
+###> IDE files ###
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+###< IDE files ###
+
+###> OS generated files ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+###< OS generated files ###
+
+###> Node.js ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+###< Node.js ###
+
+###> Build Encore ###
+/public/build/
+/public/assets/
+###< Build assets ###
+
+###> Database ###
+*.db
+*.sqlite
+*.sqlite3
+###< Database ###
+
+###> Logs ###
+*.log
+###< Logs ###
+
+###> Cache ###
+var/cache/
+var/log/
+var/sessions/
+###< Cache ###
+
+###> Composer ###
+composer.phar
+###< Composer ###
+
+###> Symfony ###
+.env.local
+.env.docker
+.env.test.local
+.env.prod.local
+###< Symfony ###
+
+###> Metadata files ###
+/public/metadata/
+###< Metadata files ###
+/var/persistent/
+
+###> Plugins ###
+/plugins/*
+###< Plugins ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> Docker ###
+compose.override.yaml
+docker-compose.override.yml
+.dockerignore
+###< Docker ###
+
+###> vincentlanglet/twig-cs-fixer ###
+/.twig-cs-fixer.cache
+###< vincentlanglet/twig-cs-fixer ###

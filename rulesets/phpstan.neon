@@ -1,0 +1,44 @@
+parameters:
+    level: max
+    paths:
+        - ../src
+    excludePaths:
+        - ../src/Kernel.php
+        - ../tests
+    bootstrapFiles:
+        - ../vendor/autoload.php
+    ignoreErrors:
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::find\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::save\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::remove\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::findAll\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::findByKeyPrefix\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::findByKey\(\)#'
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::getEntityManager\(\)#'
+        - '#Cannot access offset [a-zA-Z0-9\\_]+ on mixed#'
+        - '#Cannot cast mixed to [a-zA-Z0-9\\_]+#'
+        - '#Property [a-zA-Z0-9\\_\\:]+ is never read, only written#'
+        - '#Method [a-zA-Z0-9\\_\\:]+ is unused#'
+        - '#Variable \$[a-zA-Z0-9\\_]+ in empty\(\) always exists and is not falsy#'
+        - '#Variable \$statuses in empty\(\) always exists and is not falsy#'
+        - '#Variable \$primaryTypes in empty\(\) always exists and is not falsy#'
+        - '#Strict comparison using [=!]= between [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+ and [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+ will always evaluate to [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Ternary operator condition is always [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Else branch is unreachable because ternary operator condition is always [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Left side of && is always [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Right side of && is always [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Negated boolean expression is always [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Offset [a-zA-Z0-9\\_]+ does not exist on array#'
+        - '#Array does not have offset [a-zA-Z0-9\\_]+#'
+        - '#Method [a-zA-Z0-9\\_\\:]+ has parameter [a-zA-Z0-9\\_]+ with no type specified#'
+        - '#Method [a-zA-Z0-9\\_\\:]+ should return [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+ but returns mixed#'
+        - '#Method [a-zA-Z0-9\\_\\:]+ never returns [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+ so it can be removed from the return type#'
+        - '#Access to an undefined property [a-zA-Z0-9\\_\\:]+::\$[a-zA-Z0-9\\_]+#'
+        - '#Argument of an invalid type mixed supplied for foreach, only iterables are supported#'
+        - '#Cannot call method [a-zA-Z0-9\\_]+\(\) on [a-zA-Z0-9\\_\\:]+#'
+        - '#Part \$[a-zA-Z0-9\\_]+ \([a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+\) of encapsed string cannot be cast to [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        - '#Possibly invalid array key type [a-zA-Z0-9\\_\\|\\<\\>\\[\\]\\s]+#'
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics

@@ -1,0 +1,69 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    http_method_override: false
+    handle_all_throwables: true
+    session:
+        handler_id: null
+        cookie_secure: auto
+        cookie_samesite: lax
+        storage_factory_id: session.storage.factory.native
+    php_errors:
+        log: true
+    default_locale: en
+    enabled_locales: ['fr', 'en']
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks:
+            - en
+        paths:
+            - '%kernel.project_dir%/translations'
+
+    # HTTP Client configuration
+    http_client:
+        default_options:
+            timeout: 30
+            max_redirects: 5
+            headers:
+                'User-Agent': '%env(MUSICBRAINZ_USER_AGENT)%'
+        scoped_clients:
+            musicbrainz.client:
+                base_uri: 'https://musicbrainz.org/ws/2/'
+                headers:
+                    'Accept': 'application/json'
+                    'User-Agent': '%env(MUSICBRAINZ_USER_AGENT)%'
+                timeout: 30
+                max_redirects: 5
+                retry_failed:
+                    # Retry on HTTP 503 (Service Unavailable) and transport errors
+                    http_codes: [503, 429, 500, 502, 504]
+                    max_retries: 3
+                    # Start with 30 seconds delay (30000ms)
+                    delay: 30000
+                    # Progressive delay: 30s, 60s, 90s
+                    multiplier: 2
+                    # Maximum delay of 90 seconds
+                    max_delay: 90000
+            coverart.client:
+                base_uri: 'https://coverartarchive.org/'
+                headers:
+                    'User-Agent': '%env(MUSICBRAINZ_USER_AGENT)%'
+                timeout: 30
+                max_redirects: 5
+                retry_failed:
+                    # Retry on common HTTP errors for image downloads
+                    http_codes: [429, 500, 502, 503, 504]
+                    max_retries: 2
+                    delay: 2000
+                    multiplier: 2
+                    max_delay: 8000
+                verify_peer: false
+
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

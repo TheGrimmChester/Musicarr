@@ -1,0 +1,168 @@
+# This file defines the routes for your application
+# https://symfony.com/doc/current/routing.html
+
+# Controllers
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# Home page
+home:
+    path: /
+    controller: App\Controller\HomeController::index
+
+# Artist routes
+artist_index:
+    path: /artist
+    controller: App\Controller\ArtistController::index
+
+artist_search:
+    path: /artist/search
+    controller: App\Controller\ArtistController::search
+
+artist_add:
+    path: /artist/add
+    controller: App\Controller\ArtistController::add
+    methods: [POST]
+
+artist_show:
+    path: /artist/{id}
+    controller: App\Controller\ArtistController::show
+
+artist_sync:
+    path: /artist/{id}/sync
+    controller: App\Controller\ArtistController::sync
+    methods: [POST]
+
+artist_update:
+    path: /artist/{id}/update
+    controller: App\Controller\ArtistController::update
+    methods: [POST]
+
+artist_update_folder:
+    path: /artist/{id}/update-folder
+    controller: App\Controller\ArtistController::updateFolder
+    methods: [POST]
+
+artist_toggle_monitor:
+    path: /artist/{id}/toggle-monitor
+    controller: App\Controller\ArtistController::toggleMonitor
+    methods: [POST]
+
+artist_albums:
+    path: /artist/{id}/albums
+    controller: App\Controller\ArtistController::albums
+
+# Library routes
+library_index:
+    path: /library
+    controller: App\Controller\LibraryController::index
+
+library_list:
+    path: /library/list
+    controller: App\Controller\LibraryController::list
+
+library_add:
+    path: /library/add
+    controller: App\Controller\LibraryController::add
+    methods: [POST]
+
+library_show:
+    path: /library/{id}
+    controller: App\Controller\LibraryController::show
+
+library_scan:
+    path: /library/{id}/scan
+    controller: App\Controller\LibraryController::scan
+    methods: [POST]
+
+library_toggle:
+    path: /library/{id}/toggle
+    controller: App\Controller\LibraryController::toggle
+    methods: [POST]
+
+library_stats:
+    path: /library/{id}/stats
+    controller: App\Controller\LibraryController::stats
+
+library_artists:
+    path: /library/{id}/artists
+    controller: App\Controller\LibraryController::artists
+
+# Album routes
+album_show:
+    path: /album/{id}
+    controller: App\Controller\AlbumController::show
+
+album_tracks:
+    path: /album/{id}/tracks
+    controller: App\Controller\AlbumController::tracks
+
+album_toggle_monitor:
+    path: /album/{id}/toggle-monitor
+    controller: App\Controller\AlbumController::toggleMonitor
+    methods: [POST]
+
+album_mark_downloaded:
+    path: /album/{id}/mark-downloaded
+    controller: App\Controller\AlbumController::markDownloaded
+    methods: [POST]
+
+album_mark_missing:
+    path: /album/{id}/mark-missing
+    controller: App\Controller\AlbumController::markMissing
+    methods: [POST]
+
+# Routes pour les pistes non associées
+unmatched_tracks:
+    resource: '../src/Controller/UnmatchedTrackController.php'
+    type: attribute
+
+
+
+# Routes pour la configuration d'association
+association_config:
+    resource: '../src/Controller/AssociationConfigController.php'
+    type: attribute
+
+# Routes pour la configuration d'import d'albums
+album_import_config:
+    resource: '../src/Controller/AlbumImportConfigController.php'
+    type: attribute
+
+# Routes pour les pistes
+track:
+    resource: '../src/Controller/TrackController.php'
+    type: attribute
+
+# Routes pour l'analyse de qualité audio
+audio_quality:
+    resource: '../src/Controller/AudioQualityController.php'
+    type: attribute
+
+# Routes pour la configuration des métadonnées
+metadata_config:
+    resource: '../src/Controller/MetadataConfigController.php'
+    type: attribute
+
+# Routes pour servir les médias privés (lorsqu'enregistrés dans la bibliothèque)
+media:
+    resource: '../src/Controller/MediaController.php'
+    type: attribute
+
+# Route pour scanner les bibliothèques
+app_scan_libraries:
+    path: /scan-libraries
+    controller: App\Controller\UnmatchedTrackController::scanLibraries
+
+# Health check routes
+health:
+    resource: '../src/Controller/HealthController.php'
+    type: attribute
+
+# Plugin routes (from all available plugins)
+plugins:
+    resource: .
+    type: plugin

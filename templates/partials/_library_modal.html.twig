@@ -1,0 +1,72 @@
+<!-- Shared Library Modal -->
+<div class="modal fade" id="addLibraryModal" tabindex="-1" 
+     data-controller="modal library-modal"
+     data-modal-reset-on-hide-value="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'modal.add_library'|trans }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form data-library-modal-target="form"
+                  data-action="submit->library-modal#submitForm"
+                  method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="libraryName" class="form-label">{{ 'library.name'|trans }}</label>
+                        <input type="text" class="form-control"
+                               name="name"
+                               data-library-modal-target="nameInput"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ 'library.path'|trans }}</label>
+                        <div class="border rounded p-3" data-controller="folder-tree" data-folder-tree-initial-path-value="/">
+                            <!-- Breadcrumb -->
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-3" data-folder-tree-target="breadcrumb">
+                                    <!-- Breadcrumb will be populated here -->
+                                </ol>
+                            </nav>
+
+                            <!-- Folder list -->
+                            <div data-folder-tree-target="folderList" class="folder-tree-list">
+                                <!-- Folders will be loaded here -->
+                            </div>
+
+                            <!-- Selected path display -->
+                            <div class="mt-3">
+                                <strong>Selected path:</strong>
+                                <code data-folder-tree-target="selectedPath">No path selected</code>
+                            </div>
+
+                            <!-- Select current path button -->
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-primary btn-sm" data-action="click->folder-tree#selectCurrentPath">
+                                    <i class="fas fa-check me-1"></i>Select Current Path
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="path" data-library-modal-target="pathInput">
+                        <div class="form-text">{{ 'library.path_example'|trans }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="enabled"
+                                   data-library-modal-target="enabledToggle"
+                                   checked>
+                            <label class="form-check-label">
+                                {{ 'library.enabled'|trans }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'app.cancel'|trans }}</button>
+                    <button type="submit" class="btn btn-primary">{{ 'app.save'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

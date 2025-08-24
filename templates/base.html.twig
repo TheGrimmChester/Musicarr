@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|default('fr') }}">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}{{ 'app.title'|trans }}{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+        <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('favicon-48.png') }}">
+        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('favicon-192.png') }}">
+        <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('favicon-512.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon-192.png') }}">
+        <meta name="msapplication-TileColor" content="#343a40">
+        <meta name="theme-color" content="#343a40">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+        {{ encore_entry_link_tags('app') }}
+        {% block stylesheets %}{% endblock %}
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ path('home') }}">
+                    <img src="{{ asset('favicon.svg') }}" alt="Logo" class="navbar-logo me-2">{{ 'app.title'|trans }}
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    {{ render_menu() }}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-globe me-1"></i>{{ app.request.locale|upper }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ path('app_locale_switch', {'locale': 'fr'}) }}">{{ 'language.french'|trans }}</a></li>
+                            <li><a class="dropdown-item" href="{{ path('app_locale_switch', {'locale': 'en'}) }}">{{ 'language.english'|trans }}</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-4">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label == 'error' ? 'danger' : label }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% block body %}{% endblock %}
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Translations for JavaScript -->
+        <script>
+            window.translations = {{ {
+                'js.loading': 'js.loading'|trans,
+                'js.artist_added': 'js.artist_added'|trans,
+                'js.error_adding': 'js.error_adding'|trans,
+                'js.error_adding_artist': 'js.error_adding_artist'|trans,
+                'js.sync_completed': 'js.sync_completed'|trans,
+                'js.error_sync': 'js.error_sync'|trans,
+                'js.artist_deleted': 'js.artist_deleted'|trans,
+                'js.error_deleting_artist': 'js.error_deleting_artist'|trans,
+                'js.confirm_delete_artist': 'js.confirm_delete_artist'|trans,
+                'js.album_deleted': 'js.album_deleted'|trans,
+                'js.error_deleting': 'js.error_deleting'|trans,
+                'js.confirm_delete_album': 'js.confirm_delete_album'|trans,
+                'js.files_renamed': 'js.files_renamed'|trans,
+                'js.error_renaming': 'js.error_renaming'|trans,
+                'js.confirm_rename': 'js.confirm_rename'|trans,
+                'js.no_files': 'js.no_files'|trans,
+                'js.rename_applied': 'js.rename_applied'|trans,
+                'js.error_applying': 'js.error_applying'|trans,
+                'js.confirm_apply': 'js.confirm_apply'|trans,
+                'js.pattern_created': 'js.pattern_created'|trans,
+                'js.pattern_updated': 'js.pattern_updated'|trans,
+                'js.error_name_pattern_required': 'js.error_name_pattern_required'|trans,
+                'js.pattern_deleted': 'js.pattern_deleted'|trans,
+                'js.confirm_delete_pattern': 'js.confirm_delete_pattern'|trans,
+                'js.pattern_saved': 'js.pattern_saved'|trans,
+                'js.error_saving': 'js.error_saving'|trans,
+                'js.not_available': 'js.not_available'|trans,
+                'js.shortcuts.save': 'js.shortcuts.save'|trans|default('Save'),
+                'js.shortcuts.new': 'js.shortcuts.new'|trans|default('New'),
+                'js.shortcuts.undo': 'js.shortcuts.undo'|trans|default('Undo'),
+                'js.shortcuts.redo': 'js.shortcuts.redo'|trans|default('Redo'),
+                'artist.js.view': 'artist.js.view'|trans|default('View'),
+                'artist.js.delete': 'artist.js.delete'|trans|default('Delete'),
+                'artist.js.status_active': 'artist.js.status_active'|trans|default('Active'),
+                'artist.js.status_ended': 'artist.js.status_ended'|trans|default('Ended'),
+                'artist.js.albums': 'artist.js.albums'|trans|default('Albums'),
+                'artist.js.tracks': 'artist.js.tracks'|trans|default('Tracks'),
+                'artist.js.files': 'artist.js.files'|trans|default('Files'),
+                'system.confirm_start': 'system.confirm_start'|trans,
+                'system.confirm_stop': 'system.confirm_stop'|trans,
+                'system.confirm_restart': 'system.confirm_restart'|trans,
+                'system.confirm_start_group': 'system.confirm_start_group'|trans,
+                'system.confirm_stop_group': 'system.confirm_stop_group'|trans,
+                'system.confirm_restart_group': 'system.confirm_restart_group'|trans,
+                'js.error_search': 'js.error_search'|trans,
+                'js.error_adding': 'js.error_adding'|trans,
+                'js.error_adding_artist': 'js.error_adding_artist'|trans,
+                'js.error_upload': 'js.error_upload'|trans,
+                'js.error_copy': 'js.error_copy'|trans
+            }|json_encode|raw }};
+            
+            // Debug logging
+            console.log('Translations loaded:', Object.keys(window.translations).length, 'keys');
+            console.log('Shortcuts translations:', {
+                save: window.translations['js.shortcuts.save'],
+                new: window.translations['js.shortcuts.new'],
+                undo: window.translations['js.shortcuts.undo'],
+                redo: window.translations['js.shortcuts.redo']
+            });
+        </script>
+
+        {{ encore_entry_script_tags('app') }}
+        {% block javascripts %}{% endblock %}
+    </body>
+</html>

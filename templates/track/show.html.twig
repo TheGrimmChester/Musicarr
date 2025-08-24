@@ -1,0 +1,318 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ track.title }} - {{ track.album.title }} - Musicarr{% endblock %}
+
+{% block body %}
+{% from 'partials/_breadcrumbs.html.twig' import render_breadcrumbs %}
+
+{% set breadcrumbs = [
+    {'text': 'Accueil', 'url': path('home')},
+    {'text': 'Artistes', 'url': path('artist_index')},
+    {'text': track.album.artist.name, 'url': path('artist_show', {id: track.album.artist.id})},
+    {'text': track.album.title, 'url': path('album_show', {id: track.album.id})},
+    {'text': track.title, 'url': null, 'active': true}
+] %}
+
+{{ render_breadcrumbs(breadcrumbs) }}
+
+<div class="row" data-controller="track">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>
+                    <i class="fas fa-music me-2"></i>{{ track.title }}
+                    {% if track.hasLyrics %}
+                        <i class="fas fa-file-alt text-success ms-2" title="Paroles disponibles"></i>
+                    {% endif %}
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-user me-1"></i>{{ track.album.artist.name }}
+                    <i class="fas fa-compact-disc me-1 ms-2"></i>{{ track.album.title }}
+                    {% if track.album.releaseDate %}
+                        <i class="fas fa-calendar me-1 ms-2"></i>{{ track.album.releaseDate|date('Y') }}
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <a href="{{ path('album_show', {id: track.album.id}) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Retour à l'album
+                </a>
+            </div>
+        </div>
+
+        <!-- Informations de la piste -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>{{ 'track.information'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>{{ 'track.title_label'|trans }}:</strong> {{ track.title }}<br>
+                                <strong>{{ 'track.artist_label'|trans }}:</strong> {{ track.album.artist.name }}<br>
+                                <strong>{{ 'track.album_label'|trans }}:</strong> {{ track.album.title }}<br>
+                                <strong>{{ 'track.track_number_label'|trans }}:</strong> {{ track.trackNumber }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>{{ 'track.duration'|trans }}:</strong>
+                                {% set bestQualityFile = null %}
+                                {% set bestQualityScore = 0 %}
+                                {% for file in track.files %}
+                                    {% set qualityScore = file.qualityScore %}
+                                    {% if qualityScore > bestQualityScore %}
+                                        {% set bestQualityScore = qualityScore %}
+                                        {% set bestQualityFile = file %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if bestQualityFile and bestQualityFile.duration and bestQualityFile.duration > 0 %}
+                                    {% set totalSeconds = bestQualityFile.duration %}
+                                    {% set minutes = (totalSeconds / 60)|round(0, 'floor') %}
+                                    {% set seconds = totalSeconds % 60 %}
+                                    {{ '%02d:%02d'|format(minutes, seconds) }}
+                                {% else %}
+                                    <span class="text-muted">{{ 'track.unknown'|trans }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>{{ 'track.quality'|trans }}:</strong>
+                                {% if bestQualityFile and bestQualityFile.quality %}
+                                    <span class="badge bg-info">{{ bestQualityFile.quality }}</span>
+                                {% else %}
+                                    <span class="text-muted">{{ 'track.unknown'|trans }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file me-2"></i>{{ 'track.files'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if track.hasFile and track.files|length > 0 %}
+                            {% set maxQualityScore = 0 %}
+                            {% for file in track.files %}
+                                {% if file.qualityScore > maxQualityScore %}
+                                    {% set maxQualityScore = file.qualityScore %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% for file in track.files %}
+                                {% set isBest = file.qualityScore == maxQualityScore %}
+                                <div class="mb-3 p-3 border rounded {% if isBest %}border-success bg-success bg-opacity-10{% else %}border-secondary{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-file-audio me-2"></i>
+                                                <strong>{{ file.filePath|split('/')|last }}</strong>
+                                                {% if isBest %}
+                                                <span class="badge bg-success ms-2">
+                                                    <i class="fas fa-star"></i> {{ 'track.best_quality'|trans }}
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">{{ 'track_file.format'|trans }}:</small><br>
+                                                    <span class="badge bg-info">{{ file.format|upper }}</span>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">{{ 'track_file.quality'|trans }}:</small><br>
+                                                    {% if file.quality %}
+                                                    <span class="badge bg-secondary">{{ file.quality }}</span>
+                                                    {% else %}
+                                                    <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">{{ 'track_file.size'|trans }}:</small><br>
+                                                    {{ (file.fileSize / 1024 / 1024)|round(2) }} MB
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">{{ 'track_file.duration'|trans }}:</small><br>
+                                                    {% if file.duration > 0 %}
+                                                        {% set minutes = (file.duration / 60)|round(0, 'floor') %}
+                                                        {% set seconds = file.duration % 60 %}
+                                                        {{ '%02d:%02d'|format(minutes, seconds) }}
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% if file.lyricsPath %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">{{ 'track_file.lyrics'|trans }}:</small>
+                                                <i class="fas fa-file-alt text-success ms-1"></i>
+                                                <small>{{ file.lyricsPath|split('/')|last }}</small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ms-3">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ path('track_file_reassociate', {id: file.id}) }}" 
+                                                   class="btn btn-outline-warning"
+                                                   title="{{ 'track_file.reassociate'|trans }}">
+                                                    <i class="fas fa-link"></i>
+                                                </a>
+                                                <button class="btn btn-outline-danger delete-file" 
+                                                        data-file-id="{{ file.id }}"
+                                                        data-action="click->track#deleteFile"
+                                                        title="{{ 'track_file.delete'|trans }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                            <div class="mt-3">
+                                <a href="{{ path('track_files', {id: track.id}) }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-cog me-1"></i>{{ 'track.manage_files'|trans }}
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-file-excel fa-2x mb-2"></i>
+                                <p>{{ 'track.no_files_associated'|trans }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métadonnées -->
+        {% if track.mbid or track.album.overview %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tags me-2"></i>{{ 'track.metadata'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if track.mbid %}
+                            <div class="mb-3">
+                                <strong>{{ 'track.musicbrainz_id'|trans }}:</strong>
+                                <a href="https://musicbrainz.org/recording/{{ track.mbid }}" target="_blank" class="text-decoration-none">
+                                    {{ track.mbid }} <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                        {% if track.album.overview %}
+                            <div class="mb-3">
+                                <strong>{{ 'track.album_description'|trans }}:</strong><br>
+                                <p class="text-muted">{{ track.album.overview }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tools me-2"></i>{{ 'track.actions'|trans }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if track.hasFile %}
+                                <button class="btn btn-outline-primary" data-action="click->track#openRenameModal">
+                                    <i class="fas fa-file-signature me-1"></i>{{ 'track.rename_file'|trans }}
+                                </button>
+                                <button class="btn btn-outline-info" data-action="click->track#analyzeQuality" data-track-id="{{ track.id }}">
+                                    <i class="fas fa-chart-line me-1"></i>{{ 'track.analyze_quality'|trans }}
+                                </button>
+                            {% endif %}
+                            <a href="{{ path('album_show', {id: track.album.id}) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-compact-disc me-1"></i>{{ 'track.view_complete_album'|trans }}
+                            </a>
+                            <a href="{{ path('artist_show', {id: track.album.artist.id}) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-user me-1"></i>{{ 'track.view_artist'|trans }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de renommage -->
+<div class="modal fade" id="renameFileModal" tabindex="-1" aria-labelledby="renameFileModalLabel" aria-hidden="true" data-track-target="renameModal">
+    <div class="modal-dialog modal-full">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="renameFileModalLabel">
+                    <i class="fas fa-file-signature me-2"></i>{{ 'track.rename_file_modal'|trans }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="trackPatternSelect" class="form-label">{{ 'track.naming_pattern'|trans }}:</label>
+                    <select class="form-select" id="trackPatternSelect" data-track-target="patternSelect" data-action="change->track#generateTrackPreview">
+                        <option value="">{{ 'track.loading'|trans }}</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>{{ 'track.current_file'|trans }}</th>
+                                <th>{{ 'track.new_name'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    {% set bestQualityFile = null %}
+                                    {% set bestQualityScore = 0 %}
+                                    {% for file in track.files %}
+                                        {% set qualityScore = file.qualityScore %}
+                                        {% if qualityScore > bestQualityScore %}
+                                            {% set bestQualityScore = qualityScore %}
+                                            {% set bestQualityFile = file %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    <code>{{ bestQualityFile ? bestQualityFile.filePath : 'N/A' }}</code>
+                                </td>
+                                <td>
+                                    <span id="trackPreview" class="text-muted" data-track-target="preview">
+                                        <i class="fas fa-eye"></i> {{ 'track.preview'|trans }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'track.cancel'|trans }}</button>
+                <button type="button" class="btn btn-primary" id="trackRenameBtn" disabled data-action="click->track#renameFile" data-track-target="renameBtn">
+                    <i class="fas fa-save me-1"></i>{{ 'track.rename'|trans }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass track ID to controller -->
+<div data-track-id-value="{{ track.id }}" style="display: none;"></div>
+{% endblock %}
